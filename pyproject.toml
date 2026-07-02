@@ -1,0 +1,201 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "withoutbg"
+dynamic = ["version"]
+description = "Python SDK for local and cloud background removal"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "withoutbg", email = "contact@withoutbg.com"}
+]
+keywords = [
+    "background-removal",
+    "computer-vision",
+    "image-processing",
+    "ai",
+    "onnx",
+    "matting",
+    "segmentation",
+    "rembg",
+    "image-matting",
+    "background-remover"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+]
+dependencies = [
+    "numpy>=1.21.0",
+    "pillow>=8.0.0",
+    "onnxruntime>=1.12.0",
+    "requests>=2.25.0",
+    "click>=8.0.0",
+    "tqdm>=4.60.0",
+    "huggingface-hub>=0.33.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pre-commit>=2.20.0",
+    "commitizen>=4.1.0",
+    "types-requests>=2.32.0",
+    "types-pillow>=10.2.0",
+    "pip-audit>=2.6.0",
+]
+
+[project.urls]
+Homepage = "https://withoutbg.com"
+Repository = "https://github.com/withoutbg/withoutbg"
+Documentation = "https://withoutbg.com/documentation/integrations/python-sdk"
+"Bug Reports" = "https://github.com/withoutbg/withoutbg/issues"
+Changelog = "https://github.com/withoutbg/withoutbg/blob/main/CHANGELOG.md"
+"Docker / Self-Hosted" = "https://github.com/withoutbg/withoutbg-inference"
+
+[project.scripts]
+withoutbg = "withoutbg.cli:main"
+
+[tool.hatch.version]
+path = "src/withoutbg/__version__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=22.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/withoutbg"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/LICENSE-DINOv3",
+    "/NOTICE",
+    "/THIRD_PARTY_LICENSES.md",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+
+[tool.mypy]
+python_version = "3.9"
+exclude = ["^\\.venv/"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["huggingface_hub.*"]
+follow_imports = "skip"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=src/withoutbg",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80",
+    "--strict-markers",
+    "--disable-warnings"
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (slower, multiple components)",
+    "performance: Performance and benchmark tests (very slow)",
+    "api: Tests requiring API access (may be skipped)",
+    "slow: Slow running tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[dependency-groups]
+dev = [
+    "black>=24.8.0",
+    "commitizen>=4.1.0",
+    "hatch>=1.14.1",
+    "mypy>=1.14.1",
+    "pip-audit>=2.6.0",
+    "pre-commit>=3.5.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.12.5",
+    "types-pillow>=10.2.0.20240822",
+    "types-requests>=2.32.4.20250809",
+]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "1.0.3"
+version_files = [
+    "src/withoutbg/__version__.py:__version__",
+]
+tag_format = "v$version"
+update_changelog_on_bump = false

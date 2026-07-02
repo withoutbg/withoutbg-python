@@ -1,0 +1,77 @@
+name: Bug Report
+description: Something is broken or behaving unexpectedly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+        For Docker / self-hosted issues, please use [withoutbg-inference](https://github.com/withoutbg/withoutbg-inference/issues) instead.
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: Which variant are you using?
+      options:
+        - Local (WithoutBG.open_weights())
+        - Cloud API (WithoutBG.api())
+        - CLI
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: withoutbg version
+      placeholder: "e.g. 1.0.3  — run: python -c \"import withoutbg; print(withoutbg.__version__)\""
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "e.g. 3.11.4  — run: python --version"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest possible snippet that shows the problem.
+      render: python
+      placeholder: |
+        from withoutbg import WithoutBG
+
+        model = WithoutBG.open_weights()
+        result = model.remove_background("photo.jpg")
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Error output / traceback
+      render: text
+      description: Paste the full error message if there is one.

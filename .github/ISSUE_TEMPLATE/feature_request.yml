@@ -1,0 +1,46 @@
+name: Feature Request
+description: Suggest an improvement or new capability for the Python SDK.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature!
+        For Docker / self-hosted feature requests, use [withoutbg-inference](https://github.com/withoutbg/withoutbg-inference/issues).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or limitation you are running into.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like to see? A code sketch is welcome but not required.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      options:
+        - Python API
+        - CLI
+        - Model / inference quality
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have considered
+      description: Any workarounds you use today, or other approaches you considered.
+    validations:
+      required: false
