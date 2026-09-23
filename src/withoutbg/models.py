@@ -12,6 +12,7 @@ from huggingface_hub import hf_hub_download
 from PIL import ExifTags, Image
 
 from .exceptions import ModelNotFoundError, WithoutBGError
+from .gateway import CommunityGateway
 
 HF_REPO_ID = "withoutbg/withoutbg-openweights-onnx"
 HF_MODEL_FILENAME = "withoutbg-open-weights.onnx"
@@ -111,6 +112,8 @@ class OpenWeightsModel:
         self.sidecar: dict[str, Any] = {}
         self.session: Optional[ort.InferenceSession] = None
         self._models_loaded = False
+        self.gateway = None
+        self._hf_revision = None
 
     @property
     def models_loaded(self) -> bool:
@@ -120,6 +123,8 @@ class OpenWeightsModel:
     def preload(self) -> None:
         """Download (if needed) and load the ONNX model into memory."""
         self._ensure_models_loaded()
+        if self.gateway is not None:
+            self.gateway.preload()
 
     def _ensure_models_loaded(self) -> None:
         """Resolve model path and load ONNX session on first use."""
@@ -133,7 +138,19 @@ class OpenWeightsModel:
         )
 
         self._load_sidecar()
-        self._load_model()
+        if "gateway" in self.sidecar:
+
+            def resolve_file(filename):
+                local = self.model_path.parent / filename
+                if local.is_file():
+                    return local
+                if self._model_path_override or os.getenv("WITHOUTBG_MODEL_PATH"):
+                    raise ModelNotFoundError(f"Gateway asset not found: {local}")
+                return self._download_from_hf(filename, f"Community {filename}")
+
+            self.gateway = CommunityGateway(self.sidecar["gateway"], resolve_file)
+        else:
+            self._load_model()
         self._models_loaded = True
 
     def _get_default_model_path(self) -> Path:
@@ -148,8 +165,7 @@ class OpenWeightsModel:
             if path.exists():
                 return path
             raise ModelNotFoundError(
-                f"Model not found at path specified in WITHOUTBG_MODEL_PATH: "
-                f"{env_path}"
+                f"Model not found at path specified in WITHOUTBG_MODEL_PATH: {env_path}"
             )
         return self._download_from_hf(
             HF_MODEL_FILENAME, "withoutBG Open Weights Model ONNX model"
@@ -169,24 +185,18 @@ class OpenWeightsModel:
             ModelNotFoundError: If download fails or HF Hub is not available
         """
         try:
-            try:
-                model_path = hf_hub_download(
+            model_path = Path(
+                hf_hub_download(
                     repo_id=HF_REPO_ID,
                     filename=filename,
+                    revision=self._hf_revision,
                     cache_dir=None,
-                    local_files_only=True,
                 )
-                return Path(model_path)
-            except Exception:
-                print(f"Downloading {model_name} from Hugging Face...")
-                model_path = hf_hub_download(
-                    repo_id=HF_REPO_ID,
-                    filename=filename,
-                    cache_dir=None,
-                    local_files_only=False,
-                )
-                print(f"✓ {model_name} downloaded successfully")
-                return Path(model_path)
+            )
+            # Keep the sidecar and all branch downloads on the same Hub snapshot.
+            if model_path.parent.parent.name == "snapshots":
+                self._hf_revision = model_path.parent.name
+            return model_path
 
         except Exception as e:
             raise ModelNotFoundError(
@@ -288,6 +298,12 @@ class OpenWeightsModel:
             progress_callback(0.0)
 
         self._ensure_models_loaded()
+
+        if self.gateway is not None:
+            alpha, _route = self.gateway.estimate_alpha(image)
+            if progress_callback:
+                progress_callback(1.0)
+            return alpha
 
         orig_w, orig_h = image.size
         rgb, new_w, new_h = self._letterbox_image(image)
