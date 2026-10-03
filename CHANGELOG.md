@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.0](https://github.com/withoutbg/withoutbg-python/compare/v1.1.1...v1.2.0) (2026-10-03)
+
+### Features
+
+* route community inference through matting and BiRefNet ([27bf3bc](https://github.com/withoutbg/withoutbg-python/commit/27bf3bc06607494c4bca813d928e516e000d8ca2))
+* run the routed open-weights bundle (router → matting or BiRefNet) ([9a1dc92](https://github.com/withoutbg/withoutbg-python/commit/9a1dc9279eb70a526aa520abcf3c24a949e3de37))
+
+### Documentation
+
+* embed AlphaMate video via GitHub CDN ([1c441c7](https://github.com/withoutbg/withoutbg-python/commit/1c441c785951d5375ac3b4dc5812a93236a89765))
+* rewrite README for clarity and conviction ([8469a16](https://github.com/withoutbg/withoutbg-python/commit/8469a166de1203ca7a7ea2ccdee84b399cc30fcf))
+* swap README hero to resized revealed.webp ([d922fa7](https://github.com/withoutbg/withoutbg-python/commit/d922fa7d834ec07a78f73883f3fa8932f7fd63c2))
+* trim uncertain README claims and em dashes ([169979c](https://github.com/withoutbg/withoutbg-python/commit/169979cac64f8f0dc4fe5623bc31305682cc8a72))
+* use animated WebP for AlphaMate README reveal ([6b4830d](https://github.com/withoutbg/withoutbg-python/commit/6b4830d531129f940de439af7894f5102ac860d0))
+
 ## [1.1.1](https://github.com/withoutbg/withoutbg-python/compare/v1.1.0...v1.1.1) (2026-07-19)
 
 ### Bug Fixes
