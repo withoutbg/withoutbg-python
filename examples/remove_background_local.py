@@ -3,7 +3,7 @@
 Run:
     python examples/remove_background_local.py photo.jpg
 
-The model (~455MB) is downloaded from Hugging Face on first run and cached.
+The model bundle (~1.5 GB) is downloaded from Hugging Face on first run and cached.
 Subsequent runs load from cache and take 2–5 seconds per image.
 """
 
@@ -23,7 +23,7 @@ def main() -> None:
         ".png"
     )
 
-    print("Loading model (downloads ~455MB on first run)...")
+    print("Loading model (downloads ~1.5 GB on first run)...")
     model = WithoutBG.open_weights()
 
     print(f"Processing {input_path}...")

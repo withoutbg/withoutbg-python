@@ -151,8 +151,9 @@ class TestInferencePipeline:
         mock_session.return_value.run.assert_called_once()
 
     @patch("withoutbg.models.ort.InferenceSession")
+    @patch("withoutbg.models.OpenWeightsModel._load_sidecar")
     def test_model_not_found_error_propagates_from_inference(
-        self, mock_session, mock_model_path, sample_rgb_image
+        self, mock_load_sidecar, mock_session, mock_model_path, sample_rgb_image
     ):
         mock_session.side_effect = ModelNotFoundError("Failed to load model")
         model = OpenWeightsModel(model_path=mock_model_path)
@@ -182,3 +183,70 @@ class TestInferencePipeline:
 
         assert model.sidecar["canvas_size"] == 448
         mock_download.assert_not_called()
+
+
+class TestRoutedBundle:
+    """A sidecar with a ``pipeline`` selects the routed matting / BiRefNet bundle."""
+
+    @staticmethod
+    def _write_bundle(tmp_path, with_birefnet=True):
+        import hashlib
+
+        sidecar = {
+            "schema_version": 3,
+            "pipeline": "routed",
+            "max_inference_size": [4096, 4096],
+            "router": {
+                "file": "withoutbg-open-weights-backbone.onnx",
+                "categories": ["fine_strand", "vehicle"],
+                "birefnet_categories": ["vehicle"],
+            },
+            "coarse": {"file": "withoutbg-open-weights.onnx"},
+            "birefnet": {"file": "birefnet-general.onnx"},
+        }
+        for name in ("router", "coarse", "birefnet"):
+            data = name.encode()
+            if name != "birefnet" or with_birefnet:
+                (tmp_path / sidecar[name]["file"]).write_bytes(data)
+            sidecar[name]["sha256"] = hashlib.sha256(data).hexdigest()
+        model_path = tmp_path / "withoutbg-open-weights.onnx"
+        (tmp_path / "withoutbg-open-weights.onnx.json").write_text(json.dumps(sidecar))
+        return model_path
+
+    @patch("withoutbg.models.ort.InferenceSession")
+    def test_routed_sidecar_builds_routed_pipeline(self, mock_session, tmp_path):
+        model = OpenWeightsModel(model_path=self._write_bundle(tmp_path))
+        model._ensure_models_loaded()
+
+        assert model.routed is not None
+        assert model.session is None
+        mock_session.assert_not_called()  # graphs load lazily
+
+    def test_missing_local_asset_raises_model_not_found(self, tmp_path):
+        model = OpenWeightsModel(
+            model_path=self._write_bundle(tmp_path, with_birefnet=False)
+        )
+        model._ensure_models_loaded()
+
+        with pytest.raises(ModelNotFoundError, match="birefnet-general.onnx"):
+            model.routed.resolve_file("birefnet-general.onnx")
+
+    def test_invalid_routed_sidecar_raises_withoutbg_error(self, tmp_path):
+        model_path = self._write_bundle(tmp_path)
+        sidecar_path = tmp_path / "withoutbg-open-weights.onnx.json"
+        sidecar = json.loads(sidecar_path.read_text())
+        sidecar["pipeline"] = "routed_edge_refine"
+        sidecar_path.write_text(json.dumps(sidecar))
+
+        with pytest.raises(WithoutBGError, match="Enterprise"):
+            OpenWeightsModel(model_path=model_path)._ensure_models_loaded()
+
+    @patch("withoutbg.models.hf_hub_download")
+    def test_hub_downloads_are_pinned(self, mock_download, tmp_path, monkeypatch):
+        from withoutbg.models import HF_REVISION
+
+        monkeypatch.delenv("WITHOUTBG_MODEL_PATH", raising=False)
+        mock_download.return_value = str(tmp_path / "x.onnx")
+        OpenWeightsModel()._download_from_hf("x.onnx", "x")
+
+        assert mock_download.call_args.kwargs["revision"] == HF_REVISION

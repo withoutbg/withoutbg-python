@@ -51,7 +51,7 @@ result = model.remove_background("input.jpg")
 result.save("output.png")
 ```
 
-First local run downloads ~455 MB of weights from Hugging Face (once). After that, everything stays on your machine.
+First local run downloads ~1.5 GB of weights from Hugging Face (once; the BiRefNet branch is fetched the first time an image needs it). After that, everything stays on your machine.
 
 **Cloud (withoutBG API: best quality):**
 
@@ -96,7 +96,7 @@ Runnable scripts live in [`examples/`](examples/).
 | Quality | Good | Better (esp. hair, fur) |
 | Privacy | Stays on your machine | Image sent to API |
 | GPU required | No (CPU ONNX) | No |
-| First-run setup | ~455 MB download, once | API key only |
+| First-run setup | ~1.5 GB download, once | API key only |
 | Best for | Offline, private, batch jobs | Products, occasional use |
 
 ```
@@ -174,7 +174,7 @@ except WithoutBGError as e:
 
 ## Troubleshooting
 
-**Model download fails:** Weights come from [Hugging Face](https://huggingface.co/withoutbg/withoutbg-openweights-onnx) on first local run (~455 MB). Check your connection, or set `WITHOUTBG_MODEL_PATH` to a local copy.
+**Model download fails:** Weights come from [Hugging Face](https://huggingface.co/withoutbg/withoutbg-openweights-onnx) on first local run (~1.5 GB). Check your connection, or set `WITHOUTBG_MODEL_PATH` to a local copy.
 
 **Import error:**
 
@@ -207,9 +207,16 @@ docker run --rm -p 8080:8080 withoutbg/withoutbg-openweights-v3-app-cpu
 
 ## Model
 
-The withoutBG Open Weights Model is a unified ONNX graph hosted at [withoutbg/withoutbg-openweights-onnx](https://huggingface.co/withoutbg/withoutbg-openweights-onnx). Depth, segmentation, matting, and refinement run in one pass. Built with DINOv3.
+The withoutBG Open Weights Model is an ONNX bundle hosted at [withoutbg/withoutbg-openweights-onnx](https://huggingface.co/withoutbg/withoutbg-openweights-onnx) (version 10.8.0; the SDK pins the Hub revision). Built with DINOv3.
 
-Licensed under the [withoutBG Open Model License](https://withoutbg.com/open-model/license) (Apache 2.0 for withoutBG portions; Meta DINOv3 License for DINOv3 backbone weights).
+A trained router looks at each image and picks a branch:
+
+- **Fine strands, soft detail, transparency** → the **withoutBG matting** model (Depth Anything V2 small depth + DINOv3 ConvNeXt-fused matting), trained and maintained by withoutBG.
+- **Hard opaque objects, flat scenes, vehicles** → **BiRefNet** segmentation.
+
+Only the selected branch runs, and its alpha is upsampled to the image's native resolution (up to 4096 px per side). To run offline, download the whole bundle and set `WITHOUTBG_MODEL_PATH` to `withoutbg-open-weights.onnx` inside it; the other graphs are read from the same folder.
+
+Licensed under the [withoutBG Open Model License](https://withoutbg.com/open-model/license) (Apache 2.0 for withoutBG portions; Meta DINOv3 License for DINOv3 backbone weights; MIT for BiRefNet). See the model's [LICENSE](https://huggingface.co/withoutbg/withoutbg-openweights-onnx/blob/main/LICENSE).
 
 ## Development
 
@@ -236,6 +243,7 @@ for embedded DINOv3 weights. See the
 
 - **DINOv3 (Meta)**: Meta DINOv3 License (backbone weights in the Open Weights Model)
 - **Depth Anything V2**: Apache 2.0 (small variant; only the small variant is permissive)
+- **BiRefNet (ZhengPeng7)**: MIT (segmentation branch of the Open Weights Model)
 
 See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for complete attribution.
 
@@ -244,20 +252,3 @@ See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for complete attribution.
 - **Bugs / questions:** [GitHub Issues](https://github.com/withoutbg/withoutbg/issues)
 - **Commercial:** [contact@withoutbg.com](mailto:contact@withoutbg.com)
 - **Security:** [contact@withoutbg.com](mailto:contact@withoutbg.com) (see [SECURITY.md](SECURITY.md))
-
-## Community gateway (next release)
-
-The community pipeline reuses the trained withoutBG router. It sends fine strands,
-soft detail, and transparency to the matting branch trained and maintained by
-withoutBG. Hard opaque objects, flat scenes, and vehicles go to **BiRefNet** for
-segmentation. Only the selected branch runs.
-
-The same policy applies to Python, Docker, the Mac app, and Hugging Face. GIMP
-uses the gateway in its connected Mac or Docker server; the plugin still receives
-a cutout and an editable mask through the existing Local API. Local processing
-stays local. The Hugging Face Space runs inference on its host.
-
-New bundles carry a versioned gateway manifest, a trained router, the withoutBG
-matting model, and BiRefNet. Existing bundles without gateway metadata retain
-their original behavior. These changes are prepared locally; published downloads
-and historical benchmark results still describe the previous release.

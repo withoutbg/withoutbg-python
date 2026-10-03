@@ -12,11 +12,13 @@ from huggingface_hub import hf_hub_download
 from PIL import ExifTags, Image
 
 from .exceptions import ModelNotFoundError, WithoutBGError
-from .gateway import CommunityGateway
+from .routed import RoutedPipeline
 
 HF_REPO_ID = "withoutbg/withoutbg-openweights-onnx"
 HF_MODEL_FILENAME = "withoutbg-open-weights.onnx"
 HF_SIDECAR_FILENAME = "withoutbg-open-weights.onnx.json"
+# Pinned Hub commit: a new upload never changes what a released SDK runs.
+HF_REVISION = "93afc91c44e0e27706159ead1623918b49f31d15"
 
 
 def _apply_exif_orientation(image: Image.Image) -> Image.Image:
@@ -93,27 +95,27 @@ class OpenWeightsModel:
     """Local ONNX-based background removal model (withoutBG Open Weights Model)."""
 
     def __init__(self, model_path: Optional[Union[str, Path]] = None):
-        """Initialize the withoutBG Open Weights Model with unified WBGNet ONNX graph.
+        """Initialize the withoutBG Open Weights Model.
 
         Args:
             model_path: Path to withoutbg-open-weights.onnx (optional)
 
         Note:
-            Model paths can be provided explicitly. The ONNX graph and its
-            sidecar JSON are downloaded from Hugging Face on first use if not
-            provided. Inference runs lazily on first use via remove_background()
-            or preload().
-
-            Canvas size comes from the sidecar; defaults assume equal
-            448×448 input/output.
+            Model paths can be provided explicitly. Otherwise the bundle is
+            downloaded from Hugging Face (pinned to ``HF_REVISION``) on first
+            use. The sidecar JSON next to the model decides the pipeline: a
+            ``routed`` bundle runs the router and then the matting or BiRefNet
+            graph from the same folder; a legacy sidecar runs the single
+            letterboxed graph. Models load lazily on first use via
+            remove_background() or preload().
         """
         self._model_path_override = model_path
         self.model_path: Optional[Path] = None
         self.sidecar: dict[str, Any] = {}
         self.session: Optional[ort.InferenceSession] = None
         self._models_loaded = False
-        self.gateway = None
-        self._hf_revision = None
+        self.routed: Optional[RoutedPipeline] = None
+        self._hf_revision: Optional[str] = HF_REVISION
 
     @property
     def models_loaded(self) -> bool:
@@ -121,34 +123,38 @@ class OpenWeightsModel:
         return self._models_loaded
 
     def preload(self) -> None:
-        """Download (if needed) and load the ONNX model into memory."""
+        """Download (if needed) and load all ONNX models into memory."""
         self._ensure_models_loaded()
-        if self.gateway is not None:
-            self.gateway.preload()
+        if self.routed is not None:
+            self.routed.preload()
 
     def _ensure_models_loaded(self) -> None:
         """Resolve model path and load ONNX session on first use."""
         if self._models_loaded:
             return
 
-        self.model_path = (
+        model_path = (
             Path(self._model_path_override)
             if self._model_path_override
             else self._get_default_model_path()
         )
+        self.model_path = model_path
 
         self._load_sidecar()
-        if "gateway" in self.sidecar:
+        if "pipeline" in self.sidecar:
 
-            def resolve_file(filename):
-                local = self.model_path.parent / filename
+            def resolve_file(filename: str) -> Path:
+                local = model_path.parent / filename
                 if local.is_file():
                     return local
                 if self._model_path_override or os.getenv("WITHOUTBG_MODEL_PATH"):
-                    raise ModelNotFoundError(f"Gateway asset not found: {local}")
-                return self._download_from_hf(filename, f"Community {filename}")
+                    raise ModelNotFoundError(f"Bundle asset not found: {local}")
+                return self._download_from_hf(filename, f"Open Weights {filename}")
 
-            self.gateway = CommunityGateway(self.sidecar["gateway"], resolve_file)
+            try:
+                self.routed = RoutedPipeline(self.sidecar, resolve_file)
+            except (KeyError, TypeError, ValueError) as e:
+                raise WithoutBGError(f"Invalid model bundle: {e}") from e
         else:
             self._load_model()
         self._models_loaded = True
@@ -285,7 +291,7 @@ class OpenWeightsModel:
     def estimate_alpha(
         self, image: Image.Image, progress_callback: Optional[Callable] = None
     ) -> Image.Image:
-        """Run unified WBGNet ONNX inference to estimate alpha channel.
+        """Run ONNX inference to estimate the alpha channel.
 
         Parameters:
         - image (PIL.Image.Image): Input RGB image.
@@ -299,8 +305,8 @@ class OpenWeightsModel:
 
         self._ensure_models_loaded()
 
-        if self.gateway is not None:
-            alpha, _route = self.gateway.estimate_alpha(image)
+        if self.routed is not None:
+            alpha, _route = self.routed.estimate_alpha(image)
             if progress_callback:
                 progress_callback(1.0)
             return alpha

@@ -4,7 +4,7 @@ This project uses the following third-party components.
 
 The withoutBG Open Weights Model is a composite artifact. withoutBG-authored
 portions are Apache 2.0; DINOv3 backbone weights embedded in the model are
-subject to the Meta DINOv3 License. See the
+subject to the Meta DINOv3 License; the BiRefNet segmentation graph is MIT. See the
 [withoutBG Open Model License](https://withoutbg.com/open-model/license)
 for the combined terms.
 
@@ -12,7 +12,7 @@ for the combined terms.
 
 **License**: Meta DINOv3 License  
 **License URL**: https://ai.meta.com/resources/models-and-libraries/dinov3-license/  
-**Usage**: DINOv3 backbone weights embedded in the withoutBG Open Weights Model (v10 matting head)  
+**Usage**: DINOv3 ConvNeXt backbone weights embedded in the withoutBG Open Weights Model (router and matting graphs)  
 **Attribution**: Built with DINOv3
 
 Full license text: [LICENSE-DINOv3](LICENSE-DINOv3)
@@ -47,6 +47,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
+## BiRefNet
+
+**License**: MIT License  
+**Usage**: `birefnet-general.onnx`, the segmentation branch of the withoutBG Open Weights Model
+
+BiRefNet by ZhengPeng7, exported to ONNX.
+Source: https://github.com/ZhengPeng7/BiRefNet
+
+MIT License
+
+Copyright (c) 2024 ZhengPeng
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## Python Dependencies
 
 The following Python packages are used by this project. Please refer to their respective licenses:
@@ -80,8 +110,8 @@ Any distribution of this software or the Open Weights Model must:
 
 ## Model Weights Attribution
 
-The withoutBG Open Weights Model ONNX graph embeds DINOv3-derived weights and
-components from the repositories listed above. Users redistributing these weights
+The withoutBG Open Weights Model ONNX graphs embed DINOv3-derived weights and
+components from the repositories listed above, including BiRefNet (MIT). Users redistributing these weights
 must comply with the
 [withoutBG Open Model License](https://withoutbg.com/open-model/license),
 including Apache 2.0 for withoutBG portions and the Meta DINOv3 License for
@@ -90,30 +120,3 @@ DINOv3 portions.
 ---
 
 For questions about licensing, contact: contact@withoutbg.com
-
-## BiRefNet
-
-The community segmentation branch uses BiRefNet by ZhengPeng7.
-Source: https://github.com/ZhengPeng7/BiRefNet
-
-MIT License
-
-Copyright (c) 2024 ZhengPeng
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
