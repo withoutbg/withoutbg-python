@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.1](https://github.com/withoutbg/withoutbg-python/compare/v1.2.0...v1.2.1) (2026-10-03)
+
+### Bug Fixes
+
+* reject rooted and drive bundle paths on every OS ([78c520f](https://github.com/withoutbg/withoutbg-python/commit/78c520fdc4b2b741349e6588948922213862fc03))
+
 ## [1.2.0](https://github.com/withoutbg/withoutbg-python/compare/v1.1.1...v1.2.0) (2026-10-03)
 
 ### Features
