@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import threading
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Callable
 
 import numpy as np
@@ -27,6 +27,14 @@ PIPELINE_NAME = "routed"
 GRAPHS = ("router", "coarse", "birefnet")
 
 SessionFactory = Callable[..., Any]
+
+
+def _is_bundle_relative(filename: str) -> bool:
+    """True for a plain relative path on every OS (no root, drive or ``..``)."""
+    for path in (PurePosixPath(filename), PureWindowsPath(filename)):
+        if path.anchor or ".." in path.parts or not path.name:
+            return False
+    return True
 
 
 def validate_sidecar(sidecar: dict[str, Any]) -> None:
@@ -42,8 +50,7 @@ def validate_sidecar(sidecar: dict[str, Any]) -> None:
         raise ValueError(f"Unsupported open-weights pipeline: {pipeline!r}")
     for name in GRAPHS:
         spec = sidecar[name]
-        path = Path(spec["file"])
-        if path.is_absolute() or ".." in path.parts or not path.name:
+        if not _is_bundle_relative(spec["file"]):
             raise ValueError("Bundle model paths must be relative to the bundle")
         digest = spec["sha256"]
         if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
