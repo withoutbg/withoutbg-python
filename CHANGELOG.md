@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.3.0](https://github.com/withoutbg/withoutbg-python/compare/v1.2.1...v1.3.0) (2026-10-17)
+
+### Features
+
+* support Python 3.14 and drop Python 3.9 ([226fc20](https://github.com/withoutbg/withoutbg-python/commit/226fc200ff1b92185c08b68451e1a36a6030ebcf))
+
+### Bug Fixes
+
+* resolve onnxruntime on Python 3.10+ and keep 3.9 pinned [skip ci] ([c57ccbf](https://github.com/withoutbg/withoutbg-python/commit/c57ccbf6a98b897d1778ca3d9b3f2978bcee2e53)), closes [#27](https://github.com/withoutbg/withoutbg-python/issues/27)
+
 ## [1.2.1](https://github.com/withoutbg/withoutbg-python/compare/v1.2.0...v1.2.1) (2026-10-03)
 
 ### Bug Fixes
