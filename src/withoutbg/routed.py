@@ -16,8 +16,9 @@ from __future__ import annotations
 
 import hashlib
 import threading
+from collections.abc import Callable
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -193,7 +194,7 @@ class RoutedPipeline:
         if logits.shape != (1, len(self.categories)) or not np.isfinite(logits).all():
             raise ValueError("Router output must be finite [1, n_categories] logits")
         category = self.categories[int(np.argmax(logits[0]))]
-        return category, feeds, dict(zip(spec["feature_names"], feats))
+        return category, feeds, dict(zip(spec["feature_names"], feats, strict=False))
 
     def _coarse(
         self,

@@ -3,8 +3,9 @@
 import io
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 import numpy as np
 import onnxruntime as ort  # type: ignore
@@ -94,7 +95,7 @@ def _apply_exif_orientation(image: Image.Image) -> Image.Image:
 class OpenWeightsModel:
     """Local ONNX-based background removal model (withoutBG Open Weights Model)."""
 
-    def __init__(self, model_path: Optional[Union[str, Path]] = None):
+    def __init__(self, model_path: str | Path | None = None):
         """Initialize the withoutBG Open Weights Model.
 
         Args:
@@ -110,12 +111,12 @@ class OpenWeightsModel:
             remove_background() or preload().
         """
         self._model_path_override = model_path
-        self.model_path: Optional[Path] = None
+        self.model_path: Path | None = None
         self.sidecar: dict[str, Any] = {}
-        self.session: Optional[ort.InferenceSession] = None
+        self.session: ort.InferenceSession | None = None
         self._models_loaded = False
-        self.routed: Optional[RoutedPipeline] = None
-        self._hf_revision: Optional[str] = HF_REVISION
+        self.routed: RoutedPipeline | None = None
+        self._hf_revision: str | None = HF_REVISION
 
     @property
     def models_loaded(self) -> bool:
@@ -289,7 +290,7 @@ class OpenWeightsModel:
         return alpha
 
     def estimate_alpha(
-        self, image: Image.Image, progress_callback: Optional[Callable] = None
+        self, image: Image.Image, progress_callback: Callable | None = None
     ) -> Image.Image:
         """Run ONNX inference to estimate the alpha channel.
 
@@ -335,8 +336,8 @@ class OpenWeightsModel:
 
     def remove_background(
         self,
-        input_image: Union[str, Path, Image.Image, bytes],
-        progress_callback: Optional[Callable] = None,
+        input_image: str | Path | Image.Image | bytes,
+        progress_callback: Callable | None = None,
         **kwargs: Any,
     ) -> Image.Image:
         """Remove background from image using the withoutBG Open Weights Model.
@@ -350,7 +351,7 @@ class OpenWeightsModel:
             PIL Image with background removed
         """
         # Load image
-        if isinstance(input_image, (str, Path)):
+        if isinstance(input_image, str | Path):
             with Image.open(input_image) as img:
                 image = img.copy()
         elif isinstance(input_image, bytes):

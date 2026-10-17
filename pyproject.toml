@@ -7,7 +7,7 @@ name = "withoutbg"
 dynamic = ["version"]
 description = "Python SDK for local and cloud background removal"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 authors = [
     {name = "withoutbg", email = "contact@withoutbg.com"}
@@ -29,18 +29,17 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
 ]
 dependencies = [
     "numpy>=1.21.0",
     "pillow>=8.0.0",
-    "onnxruntime>=1.12.0,<1.20; python_version < '3.10'",
     "onnxruntime>=1.12.0,<1.24; python_version == '3.10.*'",
     "onnxruntime>=1.12.0; python_version >= '3.11'",
     "requests>=2.25.0",
@@ -65,10 +64,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://withoutbg.com"
-Repository = "https://github.com/withoutbg/withoutbg"
+Repository = "https://github.com/withoutbg/withoutbg-python"
 Documentation = "https://withoutbg.com/docs/open-model/python"
-"Bug Reports" = "https://github.com/withoutbg/withoutbg/issues"
-Changelog = "https://github.com/withoutbg/withoutbg/blob/main/CHANGELOG.md"
+"Bug Reports" = "https://github.com/withoutbg/withoutbg-python/issues"
+Changelog = "https://github.com/withoutbg/withoutbg-python/blob/main/CHANGELOG.md"
 "Docker / Self-Hosted" = "https://github.com/withoutbg/withoutbg-inference"
 
 [project.scripts]
@@ -104,11 +103,11 @@ include = [
 
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py310']
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

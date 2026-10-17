@@ -1,7 +1,6 @@
 """Real image processing tests using actual ONNX models."""
 
 import os
-from typing import Optional
 
 import numpy as np
 import pytest
@@ -102,7 +101,7 @@ def assert_images_similar(
 
 
 @pytest.fixture(scope="session")
-def real_open_weights() -> Optional[OpenWeightsModel]:
+def real_open_weights() -> OpenWeightsModel | None:
     """Load actual ONNX model if available, skip if not."""
     try:
         model = OpenWeightsModel()

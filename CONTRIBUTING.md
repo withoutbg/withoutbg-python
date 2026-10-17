@@ -5,8 +5,8 @@ Contributions are welcome. This document covers everything you need to get from 
 ## Quick setup
 
 ```bash
-git clone https://github.com/withoutbg/withoutbg
-cd withoutbg
+git clone https://github.com/withoutbg/withoutbg-python
+cd withoutbg-python
 
 # Recommended: install with uv
 uv sync --extra dev
@@ -125,7 +125,7 @@ Use the [pull request template](.github/PULL_REQUEST_TEMPLATE.md). Keep PRs focu
 
 ## Reporting bugs
 
-Open an [issue](https://github.com/withoutbg/withoutbg/issues) using the bug report template. Include:
+Open an [issue](https://github.com/withoutbg/withoutbg-python/issues) using the bug report template. Include:
 
 - Python version and OS
 - Whether you are using **Local** (`open_weights()`) or **Cloud** (`api()`)

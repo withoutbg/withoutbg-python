@@ -3,7 +3,7 @@
 import sys
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 from click._termui_impl import ProgressBar
@@ -59,12 +59,12 @@ from .exceptions import WithoutBGError
 @click.version_option(version=__version__)
 def main(
     input_path: Path,
-    output: Optional[Path],
-    api_key: Optional[str],
+    output: Path | None,
+    api_key: str | None,
     use_api: bool,
     model: str,
     batch: bool,
-    output_dir: Optional[Path],
+    output_dir: Path | None,
     format: str,
     quality: int,
     verbose: bool,
@@ -158,7 +158,7 @@ def main(
 def _process_single(
     model: WithoutBG,
     input_path: Path,
-    output_path: Optional[Path],
+    output_path: Path | None,
     format: str,
     quality: int,
     verbose: bool,
@@ -223,7 +223,7 @@ def _process_single(
 def _process_batch(
     model: WithoutBG,
     input_dir: Path,
-    output_dir: Optional[Path],
+    output_dir: Path | None,
     format: str,
     quality: int,
     verbose: bool,

@@ -2,8 +2,9 @@
 
 import base64
 import io
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 import requests
 from PIL import Image
@@ -16,7 +17,7 @@ class WithoutBGAPIClient:
     """Client for the withoutBG API."""
 
     def __init__(
-        self, api_key: Optional[str] = None, base_url: str = "https://api.withoutbg.com"
+        self, api_key: str | None = None, base_url: str = "https://api.withoutbg.com"
     ):
         """Initialize the withoutBG API client.
 
@@ -31,9 +32,9 @@ class WithoutBGAPIClient:
         if api_key:
             self.session.headers.update({"X-API-Key": api_key})
 
-    def _encode_image(self, image: Union[str, Path, Image.Image, bytes]) -> str:
+    def _encode_image(self, image: str | Path | Image.Image | bytes) -> str:
         """Encode image to base64 for API transmission."""
-        if isinstance(image, (str, Path)):
+        if isinstance(image, str | Path):
             with open(image, "rb") as f:
                 image_bytes = f.read()
         elif isinstance(image, Image.Image):
@@ -117,8 +118,8 @@ class WithoutBGAPIClient:
 
     def remove_background(
         self,
-        input_image: Union[str, Path, Image.Image, bytes],
-        progress_callback: Optional[Callable] = None,
+        input_image: str | Path | Image.Image | bytes,
+        progress_callback: Callable | None = None,
         **kwargs: Any,
     ) -> Image.Image:
         """Remove background using the withoutBG API.
@@ -142,7 +143,7 @@ class WithoutBGAPIClient:
                 progress_callback(0.1)
 
             # Store original image for local alpha application
-            if isinstance(input_image, (str, Path)):
+            if isinstance(input_image, str | Path):
                 with Image.open(input_image) as img:
                     original_image = img.copy()
             elif isinstance(input_image, Image.Image):

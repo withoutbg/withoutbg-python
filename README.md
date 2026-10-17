@@ -6,7 +6,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/withoutbg.svg)](https://pypi.org/project/withoutbg/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![CI](https://github.com/withoutbg/withoutbg/actions/workflows/ci.yml/badge.svg)](https://github.com/withoutbg/withoutbg/actions/workflows/ci.yml)
+[![CI](https://github.com/withoutbg/withoutbg-python/actions/workflows/ci.yml/badge.svg)](https://github.com/withoutbg/withoutbg-python/actions/workflows/ci.yml)
 
 Same API for both paths: run open weights on your machine (private, offline, unlimited) or call the Cloud API (sharper edges on hair and fur, no local GPU). Built for scripts, notebooks, backends, and batch jobs.
 
@@ -249,6 +249,6 @@ See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) for complete attribution.
 
 ## Support
 
-- **Bugs / questions:** [GitHub Issues](https://github.com/withoutbg/withoutbg/issues)
+- **Bugs / questions:** [GitHub Issues](https://github.com/withoutbg/withoutbg-python/issues)
 - **Commercial:** [contact@withoutbg.com](mailto:contact@withoutbg.com)
 - **Security:** [contact@withoutbg.com](mailto:contact@withoutbg.com) (see [SECURITY.md](SECURITY.md))

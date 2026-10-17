@@ -3,8 +3,9 @@
 import os
 import time
 import warnings
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 from PIL import Image
 
@@ -23,7 +24,7 @@ class WithoutBG:
 
     @staticmethod
     def open_weights(
-        model_path: Optional[Union[str, Path]] = None,
+        model_path: str | Path | None = None,
     ) -> "WithoutBGOpenWeights":
         """Create instance using the local withoutBG Open Weights Model.
 
@@ -41,7 +42,7 @@ class WithoutBG:
 
     @staticmethod
     def opensource(
-        model_path: Optional[Union[str, Path]] = None,
+        model_path: str | Path | None = None,
     ) -> "WithoutBGOpenWeights":
         """Create instance using the local withoutBG Open Weights Model.
 
@@ -59,7 +60,7 @@ class WithoutBG:
 
     @staticmethod
     def api(
-        api_key: Optional[str] = None, base_url: str = "https://api.withoutbg.com"
+        api_key: str | None = None, base_url: str = "https://api.withoutbg.com"
     ) -> "WithoutBGAPI":
         """Create instance using the withoutBG API.
 
@@ -89,8 +90,8 @@ class WithoutBG:
 
     def remove_background(
         self,
-        input_image: Union[str, Path, Image.Image, bytes],
-        progress_callback: Optional[Callable] = None,
+        input_image: str | Path | Image.Image | bytes,
+        progress_callback: Callable | None = None,
         **kwargs: Any,
     ) -> Image.Image:
         """Remove background from a single image.
@@ -107,8 +108,8 @@ class WithoutBG:
 
     def remove_background_batch(
         self,
-        input_images: list[Union[str, Path, Image.Image, bytes]],
-        output_dir: Optional[Union[str, Path]] = None,
+        input_images: list[str | Path | Image.Image | bytes],
+        output_dir: str | Path | None = None,
         **kwargs: Any,
     ) -> list[Image.Image]:
         """Remove background from multiple images.
@@ -131,7 +132,7 @@ class WithoutBGOpenWeights(WithoutBG):
     Models are downloaded and loaded on first use, then reused for all inferences.
     """
 
-    def __init__(self, model_path: Optional[Union[str, Path]] = None):
+    def __init__(self, model_path: str | Path | None = None):
         """Initialize with the withoutBG Open Weights Model.
 
         Args:
@@ -150,8 +151,8 @@ class WithoutBGOpenWeights(WithoutBG):
 
     def remove_background(
         self,
-        input_image: Union[str, Path, Image.Image, bytes],
-        progress_callback: Optional[Callable] = None,
+        input_image: str | Path | Image.Image | bytes,
+        progress_callback: Callable | None = None,
         **kwargs: Any,
     ) -> Image.Image:
         """Remove background from image using the withoutBG Open Weights Model.
@@ -180,8 +181,8 @@ class WithoutBGOpenWeights(WithoutBG):
 
     def remove_background_batch(
         self,
-        input_images: list[Union[str, Path, Image.Image, bytes]],
-        output_dir: Optional[Union[str, Path]] = None,
+        input_images: list[str | Path | Image.Image | bytes],
+        output_dir: str | Path | None = None,
         **kwargs: Any,
     ) -> list[Image.Image]:
         """Remove background from multiple images using the withoutBG Open
@@ -211,7 +212,7 @@ class WithoutBGOpenWeights(WithoutBG):
                 output_dir_path.mkdir(parents=True, exist_ok=True)
 
                 # Try to get original filename
-                if isinstance(input_image, (str, Path)):
+                if isinstance(input_image, str | Path):
                     input_path = Path(input_image)
                     stem = input_path.stem
                     suffix = input_path.suffix or ".png"
@@ -255,8 +256,8 @@ class WithoutBGAPI(WithoutBG):
 
     def remove_background(
         self,
-        input_image: Union[str, Path, Image.Image, bytes],
-        progress_callback: Optional[Callable] = None,
+        input_image: str | Path | Image.Image | bytes,
+        progress_callback: Callable | None = None,
         **kwargs: Any,
     ) -> Image.Image:
         """Remove background using the withoutBG API.
@@ -285,8 +286,8 @@ class WithoutBGAPI(WithoutBG):
 
     def remove_background_batch(
         self,
-        input_images: list[Union[str, Path, Image.Image, bytes]],
-        output_dir: Optional[Union[str, Path]] = None,
+        input_images: list[str | Path | Image.Image | bytes],
+        output_dir: str | Path | None = None,
         **kwargs: Any,
     ) -> list[Image.Image]:
         """Remove background from multiple images using the withoutBG API.
@@ -315,7 +316,7 @@ class WithoutBGAPI(WithoutBG):
                 output_dir_path.mkdir(parents=True, exist_ok=True)
 
                 # Try to get original filename
-                if isinstance(input_image, (str, Path)):
+                if isinstance(input_image, str | Path):
                     input_path = Path(input_image)
                     stem = input_path.stem
                     suffix = input_path.suffix or ".png"
