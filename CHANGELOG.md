@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.0](https://github.com/withoutbg/withoutbg-python/compare/v1.4.0...v1.5.0) (2026-11-04)
+
+### Features
+
+* **api:** send withoutbg-python User-Agent on Cloud API calls ([faeccad](https://github.com/withoutbg/withoutbg-python/commit/faeccad674f1d1e815333a86b37442c8f47709c5))
+
+### Documentation
+
+* **readme:** point API key CTA at /pro-model-api ([f7d2c14](https://github.com/withoutbg/withoutbg-python/commit/f7d2c14c86226cc6aaa1231a1d419d81c527229b))
+
 ## [1.4.0](https://github.com/withoutbg/withoutbg-python/compare/v1.3.0...v1.4.0) (2026-11-04)
 
 ### Features
