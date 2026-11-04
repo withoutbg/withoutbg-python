@@ -361,3 +361,15 @@ class TestWithoutBGAPIClient:
         call_args = mock_post.call_args
         assert call_args[0][0] == "https://custom.api.com/v1.0/alpha-channel-base64"
         assert isinstance(result, Image.Image)
+
+
+def test_user_agent_identifies_python_client():
+    from src.withoutbg.__version__ import __version__
+
+    ua = WithoutBGAPIClient(api_key="k").session.headers["User-Agent"]
+    assert ua.startswith(f"withoutbg-python/{__version__} (python/")
+
+
+def test_user_agent_prefix_keeps_python_token():
+    ua = WithoutBGAPIClient(user_agent="my-tool/2.0").session.headers["User-Agent"]
+    assert ua.startswith("my-tool/2.0 withoutbg-python/")

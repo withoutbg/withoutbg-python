@@ -2,6 +2,8 @@
 
 import base64
 import io
+import platform
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -9,25 +11,46 @@ from typing import Any
 import requests
 from PIL import Image
 
+from .__version__ import __version__
 from .exceptions import APIError
 from .models import _apply_exif_orientation
+
+
+def default_user_agent() -> str:
+    """User-Agent for API calls.
+
+    Example: ``withoutbg-python/1.3.0 (python/3.12; darwin-arm64)``.
+
+    Lets withoutBG tell Python package traffic apart from other clients. Holds no
+    user or machine identifiers.
+    """
+    py = ".".join(platform.python_version_tuple()[:2])
+    host = f"{sys.platform}-{platform.machine().lower()}"
+    return f"withoutbg-python/{__version__} (python/{py}; {host})"
 
 
 class WithoutBGAPIClient:
     """Client for the withoutBG API."""
 
     def __init__(
-        self, api_key: str | None = None, base_url: str = "https://api.withoutbg.com"
+        self,
+        api_key: str | None = None,
+        base_url: str = "https://api.withoutbg.com",
+        user_agent: str | None = None,
     ):
         """Initialize the withoutBG API client.
 
         Args:
             api_key: API key for authentication
             base_url: Base URL for API endpoints
+            user_agent: Product token to put in front of the default User-Agent,
+                e.g. ``"my-tool/2.0"`` (the ``withoutbg-python/...`` part is kept)
         """
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
+        ua = default_user_agent()
+        self.session.headers["User-Agent"] = f"{user_agent} {ua}" if user_agent else ua
 
         if api_key:
             self.session.headers.update({"X-API-Key": api_key})
