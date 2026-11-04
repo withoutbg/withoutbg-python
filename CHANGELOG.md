@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.0](https://github.com/withoutbg/withoutbg-python/compare/v1.3.0...v1.4.0) (2026-11-04)
+
+### Features
+
+* Keep / Remove edit with the Open Weights v4 bundle ([a5c54c9](https://github.com/withoutbg/withoutbg-python/commit/a5c54c930f4b49ee9d0a8fc184c437da8c629fc6))
+
+### Performance Improvements
+
+* run the matting graph once per Keep / Remove edit ([3cc5a6f](https://github.com/withoutbg/withoutbg-python/commit/3cc5a6f21c5a6f7f9980929656411b2e9cdcf116))
+
+### Documentation
+
+* Keep / Remove in README, v4 UTM links ([6cd7309](https://github.com/withoutbg/withoutbg-python/commit/6cd7309331f1d43f3932f60d7a87268daa98fbe6))
+
 ## [1.3.0](https://github.com/withoutbg/withoutbg-python/compare/v1.2.1...v1.3.0) (2026-10-17)
 
 ### Features
