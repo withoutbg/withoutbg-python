@@ -210,7 +210,7 @@ uv pip list | grep withoutbg
 uv add withoutbg
 ```
 
-**API key rejected:** Get a key at [withoutbg.com](https://withoutbg.com?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-home). Set `export WITHOUTBG_API_KEY=sk_your_key`.
+**API key rejected:** Get a key at [withoutbg.com](https://withoutbg.com/pro-model-api?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-pro-model-api). Set `export WITHOUTBG_API_KEY=sk_your_key`.
 
 **Migrating from older names** (`WithoutBG.opensource()`, `ProAPI`): see [docs/MIGRATION.md](docs/MIGRATION.md).
 
