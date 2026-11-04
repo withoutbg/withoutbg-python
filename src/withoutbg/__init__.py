@@ -14,7 +14,7 @@ Quick start::
     result = model.remove_background("photo.jpg")
     result.save("output.png")
 
-See https://withoutbg.com/docs/open-model/python?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-docs-open-model-python for full docs.
+Full docs: withoutbg.com/docs/open-model/python
 """
 
 from .__version__ import __version__

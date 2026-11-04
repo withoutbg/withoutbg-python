@@ -293,12 +293,10 @@ class RoutedPipeline:
         work_strokes = resize_nearest(strokes, h, w)
         with self.lock:
             category, feeds, feats = self._route(rgb)
-            _, depth = self._coarse(rgb, feeds, feats, with_depth=True)
+            coarse, depth = self._coarse(rgb, feeds, feats, with_depth=True)
             if matte is None:
                 if category in self.birefnet_categories:
                     coarse = self._birefnet(rgb)
-                else:
-                    coarse, _ = self._coarse(rgb, feeds, feats, with_depth=True)
                 work_matte = np.clip(resize_bilinear(coarse, h, w), 0.0, 1.0)[0]
             elif matte.shape != (h, w):
                 work_matte = resize_bilinear(matte[None].astype(np.float32), h, w)[0]
