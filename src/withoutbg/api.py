@@ -183,12 +183,12 @@ class WithoutBGAPIClient:
                 raise APIError("Rate limit exceeded (20 requests per minute)")
             elif response.status_code == 402:
                 raise APIError(
-                    "Insufficient credits. Get more credits at https://withoutbg.com/login"
+                    "Insufficient credits. Get more credits at https://withoutbg.com/login?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-login"
                 )
             elif response.status_code == 403:
                 raise APIError(
                     "Credits expired. Top up your account to reactivate "
-                    "frozen credits at https://withoutbg.com/login"
+                    "frozen credits at https://withoutbg.com/login?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-login"
                 )
             elif not response.ok:
                 try:

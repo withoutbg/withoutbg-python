@@ -10,7 +10,7 @@
 
 Same API for both paths: run open weights on your machine (private, offline, unlimited) or call the Cloud API (sharper edges on hair and fur, no local GPU). Built for scripts, notebooks, backends, and batch jobs.
 
-**[Full documentation →](https://withoutbg.com/docs/open-model/python?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)**
+**[Full documentation →](https://withoutbg.com/docs/open-model/python?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-docs-open-model-python)**
 
 ## See the results
 
@@ -18,7 +18,7 @@ Same API for both paths: run open weights on your machine (private, offline, unl
 ![Example 2](sample-results/open-weights/example2.png)
 ![Example 3](sample-results/open-weights/example3.png)
 
-**[Open Weights results →](https://withoutbg.com/open-model/results?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)** · **[Cloud API results →](https://withoutbg.com/pro-model/results?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)** · **[Compare →](https://withoutbg.com/compare/withoutbg-open-model-vs-pro-model?utm_source=github&utm_medium=withoutbg-readme&utm_campaign=main-readme)**
+**[Open Weights results →](https://withoutbg.com/open-model/results?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-open-model-results)** · **[Cloud API results →](https://withoutbg.com/pro-model/results?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-pro-model-results)** · **[Compare →](https://withoutbg.com/compare/withoutbg-open-model-vs-pro-model?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-compare-withoutbg-open-model-vs-pro-model)**
 
 ## Three lines of Python
 
@@ -30,6 +30,28 @@ model.remove_background("photo.jpg").save("result.png")
 ```
 
 Returns a PIL `Image` in RGBA. Prefer PNG or WebP; JPEG drops transparency silently.
+
+## Fix it with two strokes (new in 1.4)
+
+Missed a strand? Kept a chair you didn't want? Paint over it. **Keep / Remove** takes two
+masks (white = painted) and fixes the cutout locally with a 2.5 MB stroke-edit network.
+One stroke on an object reaches the whole object; everything away from your strokes stays as it was.
+
+```python
+from withoutbg import WithoutBG
+
+model = WithoutBG.open_weights()
+result = model.remove_background("photo.jpg")
+fixed = model.edit("photo.jpg", remove="remove.png", keep="keep.png", matte=result)
+fixed.save("fixed.png")
+```
+
+Masks can be file paths, bytes, PIL images or NumPy arrays (bool or 0..1 floats) at the
+photo's size. Pass the last result as `matte` to keep refining in rounds. Where Keep and
+Remove overlap, Remove wins.
+
+On withoutBG's frozen validation set, one round of strokes cuts the error inside the
+edited region by 83 % on matte fixes and by 96 % on unwanted / missing objects.
 
 ## Install
 
@@ -120,6 +142,10 @@ withoutbg photo.jpg --use-api
 # JPEG with white background fill
 withoutbg portrait.jpg --format jpg --quality 95
 
+# Keep / Remove: fix a cutout with masks (white = painted)
+withoutbg photo.jpg --remove remove.png --keep keep.png
+withoutbg photo.jpg --remove more.png --matte photo-withoutbg.png -o photo-v2.png
+
 withoutbg --help
 ```
 
@@ -184,7 +210,7 @@ uv pip list | grep withoutbg
 uv add withoutbg
 ```
 
-**API key rejected:** Get a key at [withoutbg.com](https://withoutbg.com). Set `export WITHOUTBG_API_KEY=sk_your_key`.
+**API key rejected:** Get a key at [withoutbg.com](https://withoutbg.com?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-home). Set `export WITHOUTBG_API_KEY=sk_your_key`.
 
 **Migrating from older names** (`WithoutBG.opensource()`, `ProAPI`): see [docs/MIGRATION.md](docs/MIGRATION.md).
 
@@ -195,28 +221,28 @@ This package is the **in-process** path: embed withoutBG in your Python code or 
 | Surface | Choose when |
 |---|---|
 | **[Docker / self-host](https://github.com/withoutbg/withoutbg-inference)** | You want an HTTP API or browser UI on your own server (CPU or NVIDIA GPU) |
-| **[Mac app](https://withoutbg.com/mac)** | You want a native desktop cutout tool, with an optional Local API for plugins and scripts |
+| **[Mac app](https://withoutbg.com/mac?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-mac)** | You want a native desktop cutout tool, with an optional Local API for plugins and scripts |
 | **[GIMP plugin](https://github.com/withoutbg/withoutbg-gimp)** | You edit in GIMP 3 and want a private, mask-first workflow via Mac Local API or Docker |
 | **[Hugging Face](https://huggingface.co/withoutbg/withoutbg-openweights-onnx)** · **[Space](https://huggingface.co/spaces/withoutbg/withoutbg)** | You want to try a demo or download the ONNX weights directly |
-| **[Cloud API](https://withoutbg.com/pro-model)** | You need maximum quality without running inference yourself |
+| **[Cloud API](https://withoutbg.com/pro-model?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-pro-model)** | You need maximum quality without running inference yourself |
 
 ```bash
 # Self-host the open-weights web app (CPU)
-docker run --rm -p 8080:8080 withoutbg/withoutbg-openweights-v3-app-cpu
+docker run --rm -p 8080:8080 withoutbg/withoutbg-openweights-v4-app-cpu
 ```
 
 ## Model
 
-The withoutBG Open Weights Model is an ONNX bundle hosted at [withoutbg/withoutbg-openweights-onnx](https://huggingface.co/withoutbg/withoutbg-openweights-onnx) (version 10.8.0; the SDK pins the Hub revision). Built with DINOv3.
+The withoutBG Open Weights Model is an ONNX bundle hosted at [withoutbg/withoutbg-openweights-onnx](https://huggingface.co/withoutbg/withoutbg-openweights-onnx) (version 10.12.4, Open Weights v4; the SDK pins the Hub revision). Built with DINOv3.
 
 A trained router looks at each image and picks a branch:
 
 - **Fine strands, soft detail, transparency** → the **withoutBG matting** model (Depth Anything V2 small depth + DINOv3 ConvNeXt-fused matting), trained and maintained by withoutBG.
 - **Hard opaque objects, flat scenes, vehicles** → **BiRefNet** segmentation.
 
-Only the selected branch runs, and its alpha is upsampled to the image's native resolution (up to 4096 px per side). To run offline, download the whole bundle and set `WITHOUTBG_MODEL_PATH` to `withoutbg-open-weights.onnx` inside it; the other graphs are read from the same folder.
+Only the selected branch runs, and its alpha is upsampled to the image's native resolution (up to 4096 px per side). `edit()` adds the Keep / Remove stroke-edit graph on top. To run offline, download the whole bundle and set `WITHOUTBG_MODEL_PATH` to `withoutbg-open-weights.onnx` inside it; the other graphs are read from the same folder.
 
-Licensed under the [withoutBG Open Model License](https://withoutbg.com/open-model/license) (Apache 2.0 for withoutBG portions; Meta DINOv3 License for DINOv3 backbone weights; MIT for BiRefNet). See the model's [LICENSE](https://huggingface.co/withoutbg/withoutbg-openweights-onnx/blob/main/LICENSE).
+Licensed under the [withoutBG Open Model License](https://withoutbg.com/open-model/license?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-open-model-license) (Apache 2.0 for withoutBG portions; Meta DINOv3 License for DINOv3 backbone weights; MIT for BiRefNet). See the model's [LICENSE](https://huggingface.co/withoutbg/withoutbg-openweights-onnx/blob/main/LICENSE).
 
 ## Development
 
@@ -236,7 +262,7 @@ This Python SDK is licensed under Apache License 2.0. See [LICENSE](LICENSE).
 
 The withoutBG Open Weights Model is a composite artifact with additional terms
 for embedded DINOv3 weights. See the
-[withoutBG Open Model License](https://withoutbg.com/open-model/license),
+[withoutBG Open Model License](https://withoutbg.com/open-model/license?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-open-model-license),
 [LICENSE-DINOv3](LICENSE-DINOv3), and [NOTICE](NOTICE).
 
 ### Third-party components

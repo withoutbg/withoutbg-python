@@ -1,6 +1,6 @@
 """Remove a background using the withoutBG cloud API.
 
-Requires an API key from https://withoutbg.com.
+Requires an API key from https://withoutbg.com?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-home.
 
 Set your key in the environment (recommended — keeps it out of code):
     export WITHOUTBG_API_KEY=sk_your_key
