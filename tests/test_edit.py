@@ -1,4 +1,4 @@
-"""Keep / Remove edit: mask contract, routed edit pass, sidecar validation."""
+"""Smart brush edit: mask contract, routed edit pass, sidecar validation."""
 
 import copy
 import hashlib

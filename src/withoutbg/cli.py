@@ -106,7 +106,7 @@ def main(
         # JPEG output with white background
         withoutbg photo.jpg --format jpg --quality 95
 
-        # Fix a cutout with Keep / Remove masks (white = painted)
+        # Fix a cutout with Smart brush masks (white = painted)
         withoutbg photo.jpg --remove remove.png --keep keep.png
 
     Get an API key at https://withoutbg.com?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-home
@@ -201,7 +201,7 @@ def _edit_single(
     matte: Path | None,
     verbose: bool,
 ) -> None:
-    """Apply Keep / Remove masks to one image and save a PNG."""
+    """Apply Smart brush masks to one image and save a PNG."""
     if not output_path:
         output_path = input_path.parent / f"{input_path.stem}-withoutbg.png"
     if verbose:

@@ -6,7 +6,7 @@ strands, soft detail and transparency go to the withoutBG matting graph (Depth
 Anything V2 small depth + ConvNeXt-fused matting, reusing those features); hard
 opaque objects, flat scenes and vehicles go to BiRefNet at 1024². Only the
 selected branch runs; its alpha is bilinearly upsampled to native resolution.
-Bundles with a ``stroke_edit`` graph (10.12.4+) also apply Keep / Remove
+Bundles with a ``stroke_edit`` graph (10.12.4+) also apply Smart brush
 strokes to a matte (:meth:`RoutedPipeline.edit_alpha`, ``edit.py``).
 
 Every graph input is a square stretch of the whole working image, float32 RGB
@@ -192,7 +192,7 @@ class RoutedPipeline:
 
     @property
     def supports_edit(self) -> bool:
-        """True when the bundle ships the Keep / Remove stroke-edit graph."""
+        """True when the bundle ships the Smart brush stroke-edit graph."""
         return "stroke_edit" in self.sidecar
 
     def _route(
@@ -267,7 +267,7 @@ class RoutedPipeline:
         strokes: np.ndarray,
         matte: np.ndarray | None = None,
     ) -> tuple[Image.Image, dict[str, str]]:
-        """Apply Keep / Remove *strokes* (``{0, 0.5, 1}`` at *image*'s size).
+        """Apply Smart brush *strokes* (``{0, 0.5, 1}`` at *image*'s size).
 
         *matte* is the previous matte (float32 ``(H, W)`` in ``[0, 1]``); without
         it the image is matted first. Returns ``(L matte, route)``.
@@ -276,7 +276,7 @@ class RoutedPipeline:
 
         if not self.supports_edit:
             raise ValueError(
-                "This bundle has no stroke-edit graph (Keep / Remove needs 10.12.4+)"
+                "This bundle has no stroke-edit graph (Smart brush needs 10.12.4+)"
             )
         orig_size = image.size
         if strokes.shape != (orig_size[1], orig_size[0]):

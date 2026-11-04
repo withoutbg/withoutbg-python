@@ -186,7 +186,7 @@ class WithoutBGOpenWeights(WithoutBG):
         remove: Any = None,
         matte: Any = None,
     ) -> Image.Image:
-        """Fix a cutout with Keep / Remove brush strokes (Open Weights 10.12.4+).
+        """Fix a cutout with Smart brush strokes (Open Weights 10.12.4+).
 
         Args:
             input_image: The original photo (path, PIL Image or bytes)

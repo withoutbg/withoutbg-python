@@ -31,9 +31,9 @@ model.remove_background("photo.jpg").save("result.png")
 
 Returns a PIL `Image` in RGBA. Prefer PNG or WebP; JPEG drops transparency silently.
 
-## Fix it with two strokes (new in 1.4)
+## Smart brush: fix it with two strokes (new in 1.4)
 
-Missed a strand? Kept a chair you didn't want? Paint over it. **Keep / Remove** takes two
+Missed a strand? Kept a chair you didn't want? Paint over it. **Smart brush** takes two
 masks (white = painted) and fixes the cutout locally with a 2.5 MB stroke-edit network.
 One stroke on an object reaches the whole object; everything away from your strokes stays as it was.
 
@@ -142,7 +142,7 @@ withoutbg photo.jpg --use-api
 # JPEG with white background fill
 withoutbg portrait.jpg --format jpg --quality 95
 
-# Keep / Remove: fix a cutout with masks (white = painted)
+# Smart brush: fix a cutout with masks (white = painted)
 withoutbg photo.jpg --remove remove.png --keep keep.png
 withoutbg photo.jpg --remove more.png --matte photo-withoutbg.png -o photo-v2.png
 
@@ -240,7 +240,7 @@ A trained router looks at each image and picks a branch:
 - **Fine strands, soft detail, transparency** → the **withoutBG matting** model (Depth Anything V2 small depth + DINOv3 ConvNeXt-fused matting), trained and maintained by withoutBG.
 - **Hard opaque objects, flat scenes, vehicles** → **BiRefNet** segmentation.
 
-Only the selected branch runs, and its alpha is upsampled to the image's native resolution (up to 4096 px per side). `edit()` adds the Keep / Remove stroke-edit graph on top. To run offline, download the whole bundle and set `WITHOUTBG_MODEL_PATH` to `withoutbg-open-weights.onnx` inside it; the other graphs are read from the same folder.
+Only the selected branch runs, and its alpha is upsampled to the image's native resolution (up to 4096 px per side). `edit()` adds the Smart brush stroke-edit graph on top. To run offline, download the whole bundle and set `WITHOUTBG_MODEL_PATH` to `withoutbg-open-weights.onnx` inside it; the other graphs are read from the same folder.
 
 Licensed under the [withoutBG Open Model License](https://withoutbg.com/open-model/license?utm_source=github&utm_medium=readme&utm_campaign=open-weights-v4&utm_content=withoutbg-python-open-model-license) (Apache 2.0 for withoutBG portions; Meta DINOv3 License for DINOv3 backbone weights; MIT for BiRefNet). See the model's [LICENSE](https://huggingface.co/withoutbg/withoutbg-openweights-onnx/blob/main/LICENSE).
 

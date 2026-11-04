@@ -414,7 +414,7 @@ class OpenWeightsModel:
         remove: Any = None,
         matte: Any = None,
     ) -> Image.Image:
-        """Fix a cutout with Keep / Remove strokes; returns the RGBA result.
+        """Fix a cutout with Smart brush strokes; returns the RGBA result.
 
         *keep* / *remove* are masks at the image's size (path, bytes, PIL image
         or array): light, opaque pixels are marked; Remove wins where both mark.
@@ -434,7 +434,7 @@ class OpenWeightsModel:
         self._ensure_models_loaded()
         if self.routed is None or not self.routed.supports_edit:
             raise WithoutBGError(
-                "This model bundle has no Keep / Remove graph "
+                "This model bundle has no Smart brush graph "
                 "(needs Open Weights 10.12.4+)"
             )
         size = image.size

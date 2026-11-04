@@ -1,4 +1,4 @@
-"""Keep / Remove edit (open weights 10.12.4+, sidecar ``stroke_edit``).
+"""Smart brush edit (open weights 10.12.4+, sidecar ``stroke_edit``).
 
 The user paints what to keep and what to remove on a matte. The stroke-edit
 graph maps RGB + matte + strokes + depth at 448² to the edited matte; it is
@@ -62,7 +62,7 @@ def _checked(img: Image.Image, size: tuple[int, int], what: str) -> Image.Image:
 def mask_from_image(
     mask: Image.Image, size: tuple[int, int], what: str = "Mask"
 ) -> np.ndarray:
-    """Bool ``(H, W)`` marks of a Keep / Remove mask; *size* is the photo's ``(w, h)`` after EXIF."""
+    """Bool ``(H, W)`` marks of a Smart brush mask; *size* is the photo's ``(w, h)`` after EXIF."""
     return np.asarray(_flatten(_checked(mask, size, what))) >= MARKED_MIN
 
 
