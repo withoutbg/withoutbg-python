@@ -10,7 +10,7 @@ from click._termui_impl import ProgressBar
 from PIL import Image
 
 from . import __version__
-from .core import WithoutBG, WithoutBGOpenWeights
+from .core import WithoutBG, WithoutBGAPI, WithoutBGOpenWeights
 from .exceptions import WithoutBGError
 
 
@@ -155,10 +155,16 @@ def main(
 
         editing = keep is not None or remove is not None or matte is not None
         if editing:
-            if using_api or batch or input_path.is_dir():
+            if batch or input_path.is_dir():
                 click.echo(
-                    "Error: --keep / --remove / --matte work on one image "
-                    "with the open-weights model",
+                    "Error: --keep / --remove / --matte work on one image",
+                    err=True,
+                )
+                sys.exit(1)
+            if using_api and matte is not None:
+                click.echo(
+                    "Error: --matte is open weights only; the API edit takes the "
+                    "photo and all strokes (--keep / --remove)",
                     err=True,
                 )
                 sys.exit(1)
@@ -168,7 +174,6 @@ def main(
 
         # Process images
         if editing:
-            assert isinstance(bg_model, WithoutBGOpenWeights)
             _edit_single(bg_model, input_path, output, keep, remove, matte, verbose)
         elif batch or input_path.is_dir():
             _process_batch(bg_model, input_path, output_dir, format, quality, verbose)
@@ -193,7 +198,7 @@ def main(
 
 
 def _edit_single(
-    model: WithoutBGOpenWeights,
+    model: WithoutBG,
     input_path: Path,
     output_path: Path | None,
     keep: Path | None,
@@ -201,12 +206,20 @@ def _edit_single(
     matte: Path | None,
     verbose: bool,
 ) -> None:
-    """Apply Smart brush masks to one image and save a PNG."""
+    """Apply Smart brush masks to one image and save a PNG.
+
+    Open weights use the local matte (or process the photo first). The API re-mattes
+    the photo on every call and takes only the strokes.
+    """
     if not output_path:
         output_path = input_path.parent / f"{input_path.stem}-withoutbg.png"
     if verbose:
         click.echo(f"Editing: {input_path} -> {output_path}")
-    result = model.edit(input_path, keep=keep, remove=remove, matte=matte)
+    if isinstance(model, WithoutBGAPI):
+        result = model.edit(input_path, keep=keep, remove=remove)
+    else:
+        assert isinstance(model, WithoutBGOpenWeights)
+        result = model.edit(input_path, keep=keep, remove=remove, matte=matte)
     result.save(output_path, format="PNG")
 
 

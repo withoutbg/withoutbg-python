@@ -280,9 +280,37 @@ def test_cli_edit_rejects_api_and_matte_alone(tmp_path):
     r = runner.invoke(main, [str(img), "--matte", str(img)])
     assert r.exit_code == 1 and "--matte needs" in r.output
     r = runner.invoke(
-        main, [str(img), "--remove", str(img), "--use-api", "--api-key", "k"]
+        main,
+        [str(img), "--matte", str(img), "--keep", str(img),
+         "--use-api", "--api-key", "k"],
     )
-    assert r.exit_code == 1 and "open-weights" in r.output
+    assert r.exit_code == 1 and "open weights only" in r.output
+
+
+def test_cli_edit_api_sends_strokes_only(tmp_path, monkeypatch):
+    from click.testing import CliRunner
+
+    from withoutbg import core
+    from withoutbg.cli import main
+
+    img = tmp_path / "a.png"
+    Image.new("RGB", (4, 4)).save(img)
+    seen = {}
+
+    def fake_edit(self, input_image, keep=None, remove=None):
+        seen.update(keep=keep, remove=remove)
+        return Image.new("RGBA", (4, 4))
+
+    monkeypatch.setattr(core.WithoutBGAPI, "edit", fake_edit)
+    out = tmp_path / "out.png"
+    r = CliRunner().invoke(
+        main,
+        [str(img), "--remove", str(img), "--use-api", "--api-key", "k", "-o", str(out)],
+    )
+    assert r.exit_code == 0, r.output
+    assert seen["remove"] == img
+    assert seen["keep"] is None
+    assert out.exists()
 
 
 def test_cli_edit_runs_model_edit(tmp_path, monkeypatch):

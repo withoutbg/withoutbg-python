@@ -373,3 +373,82 @@ def test_user_agent_identifies_python_client():
 def test_user_agent_prefix_keeps_python_token():
     ua = WithoutBGAPIClient(user_agent="my-tool/2.0").session.headers["User-Agent"]
     assert ua.startswith("my-tool/2.0 withoutbg-python/")
+
+
+class TestAPIEdit:
+    """Smart brush edit over the API: stateless, masks only, no matte or context."""
+
+    @pytest.fixture
+    def image(self):
+        return Image.new("RGB", (64, 48), (200, 30, 30))
+
+    def _mask(self, size, box):
+        m = Image.new("L", size, 0)
+        Image.Image.paste(m, 255, box)
+        return m
+
+    def _alpha_reply(self, size):
+        buf = io.BytesIO()
+        Image.new("L", size, 255).save(buf, format="PNG")
+        return {"alpha_base64": base64.b64encode(buf.getvalue()).decode()}
+
+    @patch("src.withoutbg.api.requests.Session.post")
+    def test_edit_sends_image_and_masks_only(self, mock_post, image):
+        mock_post.return_value = Mock(
+            status_code=200, ok=True, json=lambda: self._alpha_reply((64, 48))
+        )
+        client = WithoutBGAPIClient(api_key="k")
+        keep = self._mask((64, 48), (0, 0, 10, 10))
+        remove = self._mask((64, 48), (50, 40, 60, 46))
+
+        out = client.edit(image, keep=keep, remove=remove)
+
+        payload = mock_post.call_args.kwargs["json"]
+        expected = {"image_base64", "keep_mask_base64", "remove_mask_base64"}
+        assert set(payload) == expected
+        assert mock_post.call_args.args[0].endswith("/v1.0/alpha-channel-base64")
+        assert out.size == (64, 48) and out.mode == "RGBA"
+
+    @patch("src.withoutbg.api.requests.Session.post")
+    def test_edit_omits_missing_mask(self, mock_post, image):
+        mock_post.return_value = Mock(
+            status_code=200, ok=True, json=lambda: self._alpha_reply((64, 48))
+        )
+        WithoutBGAPIClient(api_key="k").edit(
+            image, remove=self._mask((64, 48), (0, 0, 5, 5))
+        )
+        payload = mock_post.call_args.kwargs["json"]
+        assert "keep_mask_base64" not in payload
+        assert "remove_mask_base64" in payload
+
+    @patch("src.withoutbg.api.requests.Session.post")
+    def test_edit_masks_follow_proxy_size(self, mock_post):
+        big = Image.new("RGB", (2048, 1024))
+        mock_post.return_value = Mock(
+            status_code=200, ok=True, json=lambda: self._alpha_reply((1024, 512))
+        )
+        remove = self._mask((2048, 1024), (1000, 400, 1100, 600))
+        WithoutBGAPIClient(api_key="k").edit(big, remove=remove)
+
+        payload = mock_post.call_args.kwargs["json"]
+        raw = base64.b64decode(payload["remove_mask_base64"])
+        with Image.open(io.BytesIO(raw)) as m:
+            assert m.size == (1024, 512)
+            assert m.getextrema() == (0, 255)
+
+    def test_edit_requires_a_mask(self, image):
+        with pytest.raises(APIError):
+            WithoutBGAPIClient(api_key="k").edit(image)
+
+    def test_edit_rejects_mask_size_mismatch(self, image):
+        bad = Image.new("L", (10, 10), 255)
+        with pytest.raises(APIError, match="does not match"):
+            WithoutBGAPIClient(api_key="k").edit(image, remove=bad)
+
+    @patch("src.withoutbg.api.requests.Session.post")
+    def test_edit_402_maps_to_api_error(self, mock_post, image):
+        mock_post.return_value = Mock(status_code=402, ok=False)
+        with pytest.raises(APIError, match="Insufficient credits"):
+            WithoutBGAPIClient(api_key="k").edit(
+                image, remove=self._mask((64, 48), (0, 0, 5, 5))
+            )

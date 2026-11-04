@@ -196,34 +196,10 @@ class WithoutBGAPIClient:
             # Make API request to base64 endpoint
             if progress_callback:
                 progress_callback(0.5)
-            response = self.session.post(
-                f"{self.base_url}/v1.0/alpha-channel-base64", json=payload, timeout=30
-            )
-
-            if response.status_code == 401:
-                raise APIError("Invalid API key")
-            elif response.status_code == 429:
-                raise APIError("Rate limit exceeded (20 requests per minute)")
-            elif response.status_code == 402:
-                raise APIError(
-                    "Insufficient credits. Get more credits at https://withoutbg.com/login?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-login"
-                )
-            elif response.status_code == 403:
-                raise APIError(
-                    "Credits expired. Top up your account to reactivate "
-                    "frozen credits at https://withoutbg.com/login?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-login"
-                )
-            elif not response.ok:
-                try:
-                    error_msg = response.json().get("error", "Unknown API error")
-                except Exception:
-                    error_msg = f"HTTP {response.status_code}: {response.text}"
-                raise APIError(f"API request failed: {error_msg}")
-
             # Decode response
             if progress_callback:
                 progress_callback(0.7)
-            result_data = response.json()
+            result_data = self._post_alpha(payload)
 
             if "alpha_base64" not in result_data:
                 raise APIError(
@@ -257,6 +233,128 @@ class WithoutBGAPIClient:
         except Exception as e:
             if isinstance(e, APIError):
                 raise
+            raise APIError(f"Unexpected error: {str(e)}") from e
+
+    def _open_image(self, image: str | Path | Image.Image | bytes) -> Image.Image:
+        """Open a path, PIL image or bytes as a loaded copy."""
+        if isinstance(image, str | Path):
+            with Image.open(image) as img:
+                return img.copy()
+        if isinstance(image, Image.Image):
+            return image.copy()
+        if isinstance(image, bytes):
+            with Image.open(io.BytesIO(image)) as img:
+                return img.copy()
+        raise APIError(f"Unsupported image type: {type(image)}")
+
+    def _encode_mask(
+        self,
+        mask: str | Path | Image.Image | bytes,
+        photo_size: tuple[int, int],
+        out_size: tuple[int, int],
+    ) -> str:
+        """Smart brush mask as a Base64 PNG at *out_size* (the uploaded proxy size).
+
+        White (light, opaque) marks the area. The mask is thresholded to 0/255 and
+        resized with nearest-neighbour so strokes stay binary.
+        """
+        from .edit import mask_from_image
+
+        marks = mask_from_image(self._open_image(mask), photo_size, "Mask")
+        img = Image.fromarray(marks.astype("uint8") * 255, mode="L")
+        if img.size != tuple(out_size):
+            img = img.resize(tuple(out_size), Image.Resampling.NEAREST)
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    def _post_alpha(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """POST to the Base64 alpha endpoint and map HTTP errors to APIError."""
+        response = self.session.post(
+            f"{self.base_url}/v1.0/alpha-channel-base64", json=payload, timeout=30
+        )
+
+        if response.status_code == 401:
+            raise APIError("Invalid API key")
+        elif response.status_code == 429:
+            raise APIError("Rate limit exceeded (20 requests per minute)")
+        elif response.status_code == 402:
+            raise APIError(
+                "Insufficient credits. Get more credits at https://withoutbg.com/login?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-login"
+            )
+        elif response.status_code == 403:
+            raise APIError(
+                "Credits expired. Top up your account to reactivate "
+                "frozen credits at https://withoutbg.com/login?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-login"
+            )
+        elif not response.ok:
+            try:
+                error_msg = response.json().get("error", "Unknown API error")
+            except Exception:
+                error_msg = f"HTTP {response.status_code}: {response.text}"
+            raise APIError(f"API request failed: {error_msg}")
+
+        return response.json()
+
+    def edit(
+        self,
+        input_image: str | Path | Image.Image | bytes,
+        keep: str | Path | Image.Image | bytes | None = None,
+        remove: str | Path | Image.Image | bytes | None = None,
+    ) -> Image.Image:
+        """Fix a cutout with Smart brush strokes using the withoutBG API.
+
+        Stateless: every call re-mattes the photo and applies the strokes it is
+        sent. Send all strokes made so far (keep and remove) on each call. No
+        matte or context is kept between calls. Costs 1 credit per call.
+
+        Args:
+            input_image: The original photo (path, PIL Image or bytes)
+            keep: Keep mask, white = keep, same size as the photo
+            remove: Remove mask, white = remove; wins where both are marked
+
+        Returns:
+            RGBA PIL Image at the original size with the edited alpha
+
+        Raises:
+            APIError: If the mask does not match the photo or the request fails
+        """
+        if not self.api_key:
+            raise APIError("API key required for withoutBG API service")
+        if keep is None and remove is None:
+            raise APIError("edit() needs a keep and/or remove mask")
+
+        from .edit import EditInputError
+
+        try:
+            original_image = _apply_exif_orientation(self._open_image(input_image))
+            api_image, original_size = self._resize_for_api(original_image)
+            payload: dict[str, Any] = {"image_base64": self._encode_image(api_image)}
+            masks = (("keep_mask_base64", keep), ("remove_mask_base64", remove))
+            for field, mask in masks:
+                if mask is not None:
+                    payload[field] = self._encode_mask(
+                        mask, original_image.size, api_image.size
+                    )
+
+            result_data = self._post_alpha(payload)
+            if "alpha_base64" not in result_data:
+                raise APIError("Invalid API response format")
+
+            alpha_image = self._decode_image(result_data["alpha_base64"])
+            if alpha_image.size != original_size:
+                alpha_image = alpha_image.resize(
+                    original_size, Image.Resampling.LANCZOS
+                )
+            return self._apply_alpha_channel(original_image, alpha_image)
+
+        except APIError:
+            raise
+        except EditInputError as e:
+            raise APIError(str(e)) from e
+        except requests.RequestException as e:
+            raise APIError(f"Network error: {str(e)}") from e
+        except Exception as e:
             raise APIError(f"Unexpected error: {str(e)}") from e
 
     def get_usage(self) -> dict[str, Any]:

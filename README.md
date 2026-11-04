@@ -53,6 +53,22 @@ Remove overlap, Remove wins.
 On withoutBG's frozen validation set, one round of strokes cuts the error inside the
 edited region by 83 % on matte fixes and by 96 % on unwanted / missing objects.
 
+### Smart brush with the withoutBG API
+
+The API takes the same strokes. It re-mattes the photo on every call, so send **all strokes
+so far** each time. It keeps no state between calls (no matte or context to store), and each
+call costs 1 credit. There is no `matte` argument.
+
+```python
+from withoutbg import WithoutBG
+
+model = WithoutBG.api(api_key="sk_...")
+fixed = model.edit("photo.jpg", keep="keep.png", remove="remove.png")
+fixed.save("fixed.png")
+```
+
+From the CLI: `withoutbg photo.jpg --use-api --remove remove.png --keep keep.png`.
+
 ## Install
 
 ```bash

@@ -310,6 +310,36 @@ class WithoutBGAPI(WithoutBG):
         except Exception as e:
             raise WithoutBGError(f"Background removal failed: {str(e)}") from e
 
+    def edit(
+        self,
+        input_image: str | Path | Image.Image | bytes,
+        keep: Any = None,
+        remove: Any = None,
+    ) -> Image.Image:
+        """Fix a cutout with Smart brush strokes using the withoutBG API.
+
+        Stateless: send every stroke made so far on each call (1 credit per call).
+        There is no matte argument; the API mattes the photo again every time.
+
+        Args:
+            input_image: The original photo (path, PIL Image or bytes)
+            keep: Keep mask, white = keep, same size as the photo
+            remove: Remove mask, white = remove; wins where both are marked
+
+        Returns:
+            RGBA PIL Image with the edited alpha
+
+        Example:
+            >>> model = WithoutBG.api(api_key="sk_...")
+            >>> fixed = model.edit("photo.jpg", remove="remove.png")
+        """
+        try:
+            return self.api_client.edit(input_image, keep=keep, remove=remove)
+        except WithoutBGError:
+            raise
+        except Exception as e:
+            raise WithoutBGError(f"Smart brush edit failed: {str(e)}") from e
+
     def remove_background_batch(
         self,
         input_images: list[str | Path | Image.Image | bytes],
