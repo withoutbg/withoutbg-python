@@ -10,7 +10,7 @@ from click._termui_impl import ProgressBar
 from PIL import Image
 
 from . import __version__
-from .core import WithoutBG
+from .core import WithoutBG, WithoutBGOpenWeights
 from .exceptions import WithoutBGError
 
 
@@ -55,6 +55,21 @@ from .exceptions import WithoutBGError
     help="Output image format",
 )
 @click.option("--quality", type=int, default=95, help="Output quality for JPEG (1-100)")
+@click.option(
+    "--keep",
+    type=click.Path(exists=True, path_type=Path),
+    help="Keep mask (white = keep), same size as the image. Open weights only.",
+)
+@click.option(
+    "--remove",
+    type=click.Path(exists=True, path_type=Path),
+    help="Remove mask (white = remove), same size as the image. Open weights only.",
+)
+@click.option(
+    "--matte",
+    type=click.Path(exists=True, path_type=Path),
+    help="Previous result to edit (RGBA or L). Default: process the image first.",
+)
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 @click.version_option(version=__version__)
 def main(
@@ -67,6 +82,9 @@ def main(
     output_dir: Path | None,
     format: str,
     quality: int,
+    keep: Path | None,
+    remove: Path | None,
+    matte: Path | None,
     verbose: bool,
 ) -> None:
     """Remove the background from an image or a directory of images.
@@ -88,7 +106,10 @@ def main(
         # JPEG output with white background
         withoutbg photo.jpg --format jpg --quality 95
 
-    Get an API key at https://withoutbg.com
+        # Fix a cutout with Keep / Remove masks (white = painted)
+        withoutbg photo.jpg --remove remove.png --keep keep.png
+
+    Get an API key at https://withoutbg.com?utm_source=python-sdk&utm_medium=app&utm_campaign=open-weights-v4&utm_content=withoutbg-python-home
     """
 
     try:
@@ -132,8 +153,24 @@ def main(
         if verbose and not using_api:
             click.echo("✓ Models loaded successfully")
 
+        editing = keep is not None or remove is not None or matte is not None
+        if editing:
+            if using_api or batch or input_path.is_dir():
+                click.echo(
+                    "Error: --keep / --remove / --matte work on one image "
+                    "with the open-weights model",
+                    err=True,
+                )
+                sys.exit(1)
+            if keep is None and remove is None:
+                click.echo("Error: --matte needs --keep and/or --remove", err=True)
+                sys.exit(1)
+
         # Process images
-        if batch or input_path.is_dir():
+        if editing:
+            assert isinstance(bg_model, WithoutBGOpenWeights)
+            _edit_single(bg_model, input_path, output, keep, remove, matte, verbose)
+        elif batch or input_path.is_dir():
             _process_batch(bg_model, input_path, output_dir, format, quality, verbose)
         else:
             _process_single(bg_model, input_path, output, format, quality, verbose)
@@ -153,6 +190,24 @@ def main(
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
         sys.exit(1)
+
+
+def _edit_single(
+    model: WithoutBGOpenWeights,
+    input_path: Path,
+    output_path: Path | None,
+    keep: Path | None,
+    remove: Path | None,
+    matte: Path | None,
+    verbose: bool,
+) -> None:
+    """Apply Keep / Remove masks to one image and save a PNG."""
+    if not output_path:
+        output_path = input_path.parent / f"{input_path.stem}-withoutbg.png"
+    if verbose:
+        click.echo(f"Editing: {input_path} -> {output_path}")
+    result = model.edit(input_path, keep=keep, remove=remove, matte=matte)
+    result.save(output_path, format="PNG")
 
 
 def _process_single(

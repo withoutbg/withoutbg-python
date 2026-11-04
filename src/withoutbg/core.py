@@ -179,6 +179,32 @@ class WithoutBGOpenWeights(WithoutBG):
         except Exception as e:
             raise WithoutBGError(f"Background removal failed: {str(e)}") from e
 
+    def edit(
+        self,
+        input_image: str | Path | Image.Image | bytes,
+        keep: Any = None,
+        remove: Any = None,
+        matte: Any = None,
+    ) -> Image.Image:
+        """Fix a cutout with Keep / Remove brush strokes (Open Weights 10.12.4+).
+
+        Args:
+            input_image: The original photo (path, PIL Image or bytes)
+            keep: Mask of what to keep (light pixels = marked), same size
+            remove: Mask of what to remove; wins where both are marked
+            matte: Previous result (RGBA or L). If omitted, the image is
+                processed first. Pass the last result to chain edits.
+
+        Returns:
+            RGBA PIL Image with the edited alpha
+
+        Example:
+            >>> model = WithoutBG.open_weights()
+            >>> result = model.remove_background("photo.jpg")
+            >>> fixed = model.edit("photo.jpg", remove="remove.png", matte=result)
+        """
+        return self.model.edit(input_image, keep=keep, remove=remove, matte=matte)
+
     def remove_background_batch(
         self,
         input_images: list[str | Path | Image.Image | bytes],

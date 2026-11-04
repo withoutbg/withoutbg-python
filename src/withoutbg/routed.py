@@ -6,6 +6,8 @@ strands, soft detail and transparency go to the withoutBG matting graph (Depth
 Anything V2 small depth + ConvNeXt-fused matting, reusing those features); hard
 opaque objects, flat scenes and vehicles go to BiRefNet at 1024². Only the
 selected branch runs; its alpha is bilinearly upsampled to native resolution.
+Bundles with a ``stroke_edit`` graph (10.12.4+) also apply Keep / Remove
+strokes to a matte (:meth:`RoutedPipeline.edit_alpha`, ``edit.py``).
 
 Every graph input is a square stretch of the whole working image, float32 RGB
 in [0, 1], NCHW; normalization lives inside the graphs. Graphs are resolved and
@@ -26,6 +28,7 @@ from PIL import Image
 SCHEMA_VERSION = 3
 PIPELINE_NAME = "routed"
 GRAPHS = ("router", "coarse", "birefnet")
+OPTIONAL_GRAPHS = ("stroke_edit",)
 
 SessionFactory = Callable[..., Any]
 
@@ -49,7 +52,7 @@ def validate_sidecar(sidecar: dict[str, Any]) -> None:
         )
     if pipeline != PIPELINE_NAME:
         raise ValueError(f"Unsupported open-weights pipeline: {pipeline!r}")
-    for name in GRAPHS:
+    for name in GRAPHS + tuple(g for g in OPTIONAL_GRAPHS if g in sidecar):
         spec = sidecar[name]
         if not _is_bundle_relative(spec["file"]):
             raise ValueError("Bundle model paths must be relative to the bundle")
@@ -59,6 +62,10 @@ def validate_sidecar(sidecar: dict[str, Any]) -> None:
     router = sidecar["router"]
     if not set(router["birefnet_categories"]) <= set(router["categories"]):
         raise ValueError("BiRefNet categories must be router categories")
+    if "stroke_edit" in sidecar and not sidecar["coarse"].get("edit_depth_name"):
+        raise ValueError(
+            "A stroke_edit bundle needs the coarse graph's edit_depth output"
+        )
 
 
 def fit_max_size(image: Image.Image, max_width: int, max_height: int) -> Image.Image:
@@ -180,8 +187,13 @@ class RoutedPipeline:
 
     def preload(self) -> None:
         """Resolve, verify and load every graph so both branches are ready."""
-        for name in GRAPHS:
+        for name in GRAPHS + tuple(g for g in OPTIONAL_GRAPHS if g in self.sidecar):
             self._session(name)
+
+    @property
+    def supports_edit(self) -> bool:
+        """True when the bundle ships the Keep / Remove stroke-edit graph."""
+        return "stroke_edit" in self.sidecar
 
     def _route(
         self, rgb: np.ndarray
@@ -201,14 +213,24 @@ class RoutedPipeline:
         rgb: np.ndarray,
         feeds: dict[str, np.ndarray],
         feats: dict[str, np.ndarray],
-    ) -> np.ndarray:
+        with_depth: bool = False,
+    ) -> Any:
+        """Coarse alpha ``(1, 448, 448)``; with *with_depth* also ``edit_depth``."""
         spec = self.sidecar["coarse"]
         # The backbone already resized rgb_matting identically; reuse it.
         coarse_feeds = graph_inputs(rgb, spec, cached=feeds)
         coarse_feeds.update(feats)
-        out: np.ndarray = self._session("coarse").run(
-            [spec["output_name"]], coarse_feeds
-        )[0][0]
+        names = [spec["output_name"]] + (
+            [spec["edit_depth_name"]] if with_depth else []
+        )
+        outs = self._session("coarse").run(names, coarse_feeds)
+        return (outs[0][0], outs[1]) if with_depth else outs[0][0]
+
+    def _run_editor(self, x: np.ndarray) -> np.ndarray:
+        spec = self.sidecar["stroke_edit"]
+        out: np.ndarray = self._session("stroke_edit").run(
+            [spec["output_name"]], {spec["input_name"]: x}
+        )[0]
         return out
 
     def _birefnet(self, rgb: np.ndarray) -> np.ndarray:
@@ -238,3 +260,64 @@ class RoutedPipeline:
         if matte.size != orig_size:
             matte = matte.resize(orig_size, Image.Resampling.BILINEAR)
         return matte, {"category": category, "pipeline": pipeline}
+
+    def edit_alpha(
+        self,
+        image: Image.Image,
+        strokes: np.ndarray,
+        matte: np.ndarray | None = None,
+    ) -> tuple[Image.Image, dict[str, str]]:
+        """Apply Keep / Remove *strokes* (``{0, 0.5, 1}`` at *image*'s size).
+
+        *matte* is the previous matte (float32 ``(H, W)`` in ``[0, 1]``); without
+        it the image is matted first. Returns ``(L matte, route)``.
+        """
+        from .edit import clamp_matte, edit_alpha, net_clamp, resize_nearest
+
+        if not self.supports_edit:
+            raise ValueError(
+                "This bundle has no stroke-edit graph (Keep / Remove needs 10.12.4+)"
+            )
+        orig_size = image.size
+        if strokes.shape != (orig_size[1], orig_size[0]):
+            raise ValueError(
+                f"strokes {strokes.shape} do not match image {orig_size[::-1]}"
+            )
+        if matte is not None and matte.shape != strokes.shape:
+            raise ValueError(
+                f"matte {matte.shape} does not match image {orig_size[::-1]}"
+            )
+        work = fit_max_size(image.convert("RGB"), *self.max_size)
+        rgb = np.asarray(work, dtype=np.float32) / 255.0
+        h, w = rgb.shape[:2]
+        work_strokes = resize_nearest(strokes, h, w)
+        with self.lock:
+            category, feeds, feats = self._route(rgb)
+            _, depth = self._coarse(rgb, feeds, feats, with_depth=True)
+            if matte is None:
+                if category in self.birefnet_categories:
+                    coarse = self._birefnet(rgb)
+                else:
+                    coarse, _ = self._coarse(rgb, feeds, feats, with_depth=True)
+                work_matte = np.clip(resize_bilinear(coarse, h, w), 0.0, 1.0)[0]
+            elif matte.shape != (h, w):
+                work_matte = resize_bilinear(matte[None].astype(np.float32), h, w)[0]
+            else:
+                work_matte = matte.astype(np.float32)
+            alpha = edit_alpha(
+                rgb,
+                work_matte,
+                work_strokes,
+                depth,
+                self.sidecar["stroke_edit"],
+                self._run_editor,
+                resize_bilinear,
+            )
+        out = Image.fromarray(
+            np.clip(alpha * 255.0 + 0.5, 0, 255).astype(np.uint8), "L"
+        )
+        if out.size != orig_size:
+            out = clamp_matte(
+                out.resize(orig_size, Image.Resampling.BILINEAR), net_clamp(strokes)
+            )
+        return out, {"category": category, "pipeline": "edit"}

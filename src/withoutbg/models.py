@@ -19,7 +19,7 @@ HF_REPO_ID = "withoutbg/withoutbg-openweights-onnx"
 HF_MODEL_FILENAME = "withoutbg-open-weights.onnx"
 HF_SIDECAR_FILENAME = "withoutbg-open-weights.onnx.json"
 # Pinned Hub commit: a new upload never changes what a released SDK runs.
-HF_REVISION = "93afc91c44e0e27706159ead1623918b49f31d15"
+HF_REVISION = "d0bfe3f4d0cefe0a2ad427f350c6373a7e889ea0"
 
 
 def _apply_exif_orientation(image: Image.Image) -> Image.Image:
@@ -387,6 +387,87 @@ class OpenWeightsModel:
             raise
         except Exception as e:
             raise WithoutBGError(f"Model inference failed: {str(e)}") from e
+
+    @staticmethod
+    def _open(source: Any, what: str) -> Image.Image:
+        if isinstance(source, Image.Image):
+            return source.copy()
+        if isinstance(source, np.ndarray):
+            arr = source
+            if arr.dtype == bool:
+                arr = arr.astype(np.uint8) * 255
+            elif arr.dtype != np.uint8:
+                arr = (np.clip(arr, 0, 1) * 255 + 0.5).astype(np.uint8)
+            return Image.fromarray(arr)
+        if isinstance(source, bytes):
+            with Image.open(io.BytesIO(source)) as img:
+                return img.copy()
+        if isinstance(source, str | Path):
+            with Image.open(source) as img:
+                return img.copy()
+        raise WithoutBGError(f"Unsupported {what} type: {type(source)}")
+
+    def edit(
+        self,
+        input_image: str | Path | Image.Image | bytes,
+        keep: Any = None,
+        remove: Any = None,
+        matte: Any = None,
+    ) -> Image.Image:
+        """Fix a cutout with Keep / Remove strokes; returns the RGBA result.
+
+        *keep* / *remove* are masks at the image's size (path, bytes, PIL image
+        or array): light, opaque pixels are marked; Remove wins where both mark.
+        *matte* is the previous result (its alpha, or an ``L`` matte); without
+        it the image is matted first. Chain edits by passing the last result.
+        """
+        from .edit import (
+            EditInputError,
+            combine_masks,
+            mask_from_image,
+            matte_from_image,
+        )
+
+        if keep is None and remove is None:
+            raise WithoutBGError("edit() needs a keep and/or remove mask")
+        image = _apply_exif_orientation(self._open(input_image, "image")).convert("RGB")
+        self._ensure_models_loaded()
+        if self.routed is None or not self.routed.supports_edit:
+            raise WithoutBGError(
+                "This model bundle has no Keep / Remove graph "
+                "(needs Open Weights 10.12.4+)"
+            )
+        size = image.size
+        try:
+            k = (
+                None
+                if keep is None
+                else mask_from_image(self._open(keep, "keep mask"), size, "Keep mask")
+            )
+            r = (
+                None
+                if remove is None
+                else mask_from_image(
+                    self._open(remove, "remove mask"), size, "Remove mask"
+                )
+            )
+            prev = None
+            if matte is not None:
+                m = self._open(matte, "matte")
+                if m.mode in ("RGBA", "LA"):
+                    m = m.getchannel("A")
+                prev = matte_from_image(m, size)
+            strokes = combine_masks(k, r, (size[1], size[0]))
+            alpha, _route = self.routed.edit_alpha(image, strokes, prev)
+        except EditInputError as e:
+            raise WithoutBGError(str(e)) from e
+        except WithoutBGError:
+            raise
+        except Exception as e:
+            raise WithoutBGError(f"Edit failed: {e}") from e
+        out = image.convert("RGBA")
+        out.putalpha(alpha)
+        return out
 
 
 # Deprecated alias — will be removed in a future release

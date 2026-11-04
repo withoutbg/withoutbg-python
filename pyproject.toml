@@ -46,6 +46,7 @@ dependencies = [
     "click>=8.0.0",
     "tqdm>=4.60.0",
     "huggingface-hub>=0.33.5",
+    "opencv-python-headless>=4.8.0",
 ]
 
 [project.optional-dependencies]
@@ -63,9 +64,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://withoutbg.com"
+Homepage = "https://withoutbg.com?utm_source=pypi&utm_medium=listing&utm_campaign=open-weights-v4&utm_content=withoutbg-python-home"
 Repository = "https://github.com/withoutbg/withoutbg-python"
-Documentation = "https://withoutbg.com/docs/open-model/python"
+Documentation = "https://withoutbg.com/docs/open-model/python?utm_source=pypi&utm_medium=listing&utm_campaign=open-weights-v4&utm_content=withoutbg-python-docs-open-model-python"
 "Bug Reports" = "https://github.com/withoutbg/withoutbg-python/issues"
 Changelog = "https://github.com/withoutbg/withoutbg-python/blob/main/CHANGELOG.md"
 "Docker / Self-Hosted" = "https://github.com/withoutbg/withoutbg-inference"
@@ -120,6 +121,10 @@ select = [
     "UP", # pyupgrade
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Verbatim reference-host code (Keep / Remove), kept identical for parity.
+"src/withoutbg/edit.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.12"
 exclude = ["^\\.venv/"]
@@ -139,6 +144,11 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = ["huggingface_hub.*"]
 follow_imports = "skip"
+
+# edit.py is the withoutBG reference host's edit code, kept verbatim for parity.
+[[tool.mypy.overrides]]
+module = ["withoutbg.edit"]
+warn_return_any = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
