@@ -199,6 +199,16 @@ bg.save("composite.png")
 
 When using `WITHOUTBG_MODEL_PATH`, keep the sidecar metadata file (`withoutbg-open-weights.onnx.json`) next to the ONNX file.
 
+### GPU
+
+Local mode runs on CPU by default. To use another ONNX Runtime execution provider, install the matching `onnxruntime` build (for example `onnxruntime-gpu`) and pass `providers`:
+
+```python
+model = WithoutBG.open_weights(providers=["CUDAExecutionProvider"])
+```
+
+The first provider must load, otherwise a `RuntimeError` names the problem. Add `"CPUExecutionProvider"` last in your own fallback logic if you want one.
+
 ## Error handling
 
 ```python

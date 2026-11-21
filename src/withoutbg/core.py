@@ -25,11 +25,14 @@ class WithoutBG:
     @staticmethod
     def open_weights(
         model_path: str | Path | None = None,
+        providers: list[str] | None = None,
     ) -> "WithoutBGOpenWeights":
         """Create instance using the local withoutBG Open Weights Model.
 
         Args:
             model_path: Optional path to withoutbg-open-weights.onnx
+            providers: Optional ONNX Runtime execution providers in order of
+                preference, e.g. ``["CUDAExecutionProvider"]``. Default: CPU.
 
         Returns:
             WithoutBGOpenWeights: Instance for local background removal
@@ -38,7 +41,7 @@ class WithoutBG:
             >>> model = WithoutBG.open_weights()
             >>> result = model.remove_background("input.jpg")
         """
-        return WithoutBGOpenWeights(model_path=model_path)
+        return WithoutBGOpenWeights(model_path=model_path, providers=providers)
 
     @staticmethod
     def opensource(
@@ -132,18 +135,23 @@ class WithoutBGOpenWeights(WithoutBG):
     Models are downloaded and loaded on first use, then reused for all inferences.
     """
 
-    def __init__(self, model_path: str | Path | None = None):
+    def __init__(
+        self,
+        model_path: str | Path | None = None,
+        providers: list[str] | None = None,
+    ):
         """Initialize with the withoutBG Open Weights Model.
 
         Args:
             model_path: Path to withoutbg-open-weights.onnx (optional)
+            providers: ONNX Runtime execution providers (optional, default CPU)
 
         Note:
             The model is loaded lazily on the first call to remove_background()
             or preload(). If a path is not provided, the ONNX graph and sidecar
             metadata are downloaded from Hugging Face on first use.
         """
-        self.model = OpenWeightsModel(model_path=model_path)
+        self.model = OpenWeightsModel(model_path=model_path, providers=providers)
 
     def preload(self) -> None:
         """Download (if needed) and load all ONNX models into memory."""

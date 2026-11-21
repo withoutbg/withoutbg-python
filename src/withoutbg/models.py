@@ -96,11 +96,18 @@ def _apply_exif_orientation(image: Image.Image) -> Image.Image:
 class OpenWeightsModel:
     """Local ONNX-based background removal model (withoutBG Open Weights Model)."""
 
-    def __init__(self, model_path: str | Path | None = None):
+    def __init__(
+        self,
+        model_path: str | Path | None = None,
+        providers: list[str] | None = None,
+    ):
         """Initialize the withoutBG Open Weights Model.
 
         Args:
             model_path: Path to withoutbg-open-weights.onnx (optional)
+            providers: ONNX Runtime execution providers, in order of preference
+                (default: CPU only). The first one must load, or a clear error
+                is raised.
 
         Note:
             Model paths can be provided explicitly. Otherwise the bundle is
@@ -112,6 +119,7 @@ class OpenWeightsModel:
             remove_background() or preload().
         """
         self._model_path_override = model_path
+        self.providers = list(providers) if providers else ["CPUExecutionProvider"]
         self.model_path: Path | None = None
         self.sidecar: dict[str, Any] = {}
         self.session: ort.InferenceSession | None = None
@@ -154,7 +162,9 @@ class OpenWeightsModel:
                 return self._download_from_hf(filename, f"Open Weights {filename}")
 
             try:
-                self.routed = RoutedPipeline(self.sidecar, resolve_file)
+                self.routed = RoutedPipeline(
+                    self.sidecar, resolve_file, providers=self.providers
+                )
             except (KeyError, TypeError, ValueError) as e:
                 raise WithoutBGError(f"Invalid model bundle: {e}") from e
         else:
@@ -253,9 +263,8 @@ class OpenWeightsModel:
     def _load_model(self) -> None:
         """Load the unified ONNX model."""
         try:
-            providers = ["CPUExecutionProvider"]
             self.session = ort.InferenceSession(
-                str(self.model_path), providers=providers
+                str(self.model_path), providers=self.providers
             )
         except Exception as e:
             raise ModelNotFoundError(f"Failed to load model: {str(e)}") from e

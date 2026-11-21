@@ -221,3 +221,52 @@ def test_resize_bilinear_matches_torch_half_pixel_centers():
     out = resize_bilinear(x, 1, 4)
     # F.interpolate(mode="bilinear", align_corners=False) → [0, .25, .75, 1]
     np.testing.assert_allclose(out[0, 0], [0.0, 0.25, 0.75, 1.0])
+
+
+def test_providers_reach_session_factory(bundle):
+    sidecar, root = bundle
+    seen = []
+
+    class Session:
+        def __init__(self, path, providers):
+            seen.append(providers)
+
+        def get_providers(self):
+            return seen[-1]
+
+    pipeline = RoutedPipeline(
+        sidecar,
+        lambda name: root / name,
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        session_factory=Session,
+    )
+    pipeline._session("router")
+    assert seen == [["CUDAExecutionProvider", "CPUExecutionProvider"]]
+
+
+def test_unavailable_first_provider_raises(bundle):
+    sidecar, root = bundle
+
+    class Session:
+        def __init__(self, path, providers):
+            pass
+
+        def get_providers(self):
+            return ["CPUExecutionProvider"]
+
+    pipeline = RoutedPipeline(
+        sidecar,
+        lambda name: root / name,
+        providers=["CUDAExecutionProvider"],
+        session_factory=Session,
+    )
+    with pytest.raises(RuntimeError, match="provider unavailable"):
+        pipeline._session("router")
+
+
+def test_open_weights_providers_default_and_override():
+    from withoutbg import WithoutBG
+
+    assert WithoutBG.open_weights().model.providers == ["CPUExecutionProvider"]
+    gpu = WithoutBG.open_weights(providers=["CUDAExecutionProvider"])
+    assert gpu.model.providers == ["CUDAExecutionProvider"]
