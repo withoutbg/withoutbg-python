@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.1](https://github.com/withoutbg/withoutbg-python/compare/v1.5.0...v1.5.1) (2026-11-21)
+
+### Bug Fixes
+
+* **models:** retry Hub download without a token after 401 ([b0b0c32](https://github.com/withoutbg/withoutbg-python/commit/b0b0c32d7bf7c2e5324dc7c94fa58c8b4e78c0a0))
+
 ## [1.5.0](https://github.com/withoutbg/withoutbg-python/compare/v1.4.0...v1.5.0) (2026-11-04)
 
 ### Features
