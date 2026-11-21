@@ -199,15 +199,19 @@ bg.save("composite.png")
 
 When using `WITHOUTBG_MODEL_PATH`, keep the sidecar metadata file (`withoutbg-open-weights.onnx.json`) next to the ONNX file.
 
-### GPU
+### GPU (NVIDIA)
 
-Local mode runs on CPU by default. To use another ONNX Runtime execution provider, install the matching `onnxruntime` build (for example `onnxruntime-gpu`) and pass `providers`:
+Local mode runs on CPU by default. For CUDA, swap the ONNX Runtime package and add `onnx` (the published graphs are CPU-optimized; `onnx` lets the SDK prepare them for CUDA in memory, nothing is written to disk):
+
+```bash
+pip uninstall onnxruntime && pip install onnxruntime-gpu "withoutbg[gpu]"
+```
 
 ```python
 model = WithoutBG.open_weights(providers=["CUDAExecutionProvider"])
 ```
 
-The first provider must load, otherwise a `RuntimeError` names the problem. Add `"CPUExecutionProvider"` last in your own fallback logic if you want one.
+On an RTX 2070 SUPER, 12 mixed photos averaged about 1.7 s instead of about 6 s on CPU, with alpha within 1/255 of the CPU result. If the provider cannot load, a `RuntimeError` names the problem; add your own CPU fallback if you want one.
 
 ## Error handling
 

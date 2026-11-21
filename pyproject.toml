@@ -50,7 +50,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# CUDA: also swap onnxruntime for onnxruntime-gpu (they conflict, so not listed here)
+gpu = ["onnx>=1.16.0"]
 dev = [
+    "onnx>=1.16.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "black>=22.0.0",

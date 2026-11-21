@@ -25,6 +25,8 @@ from typing import Any
 import numpy as np
 from PIL import Image
 
+from .cuda import CUDA_PROVIDER, defuse_for_cuda
+
 SCHEMA_VERSION = 3
 PIPELINE_NAME = "routed"
 GRAPHS = ("router", "coarse", "birefnet")
@@ -179,7 +181,10 @@ class RoutedPipeline:
                         digest.update(block)
                 if digest.hexdigest() != spec["sha256"]:
                     raise ValueError(f"Bundle checksum mismatch: {name}")
-                session = self.session_factory(str(path), providers=self.providers)
+                graph: Any = str(path)
+                if self.providers[0] == CUDA_PROVIDER:
+                    graph = defuse_for_cuda(path) or graph
+                session = self.session_factory(graph, providers=self.providers)
                 if session.get_providers()[0] != self.providers[0]:
                     raise RuntimeError(f"Requested provider unavailable for {name}")
                 self.sessions[name] = session

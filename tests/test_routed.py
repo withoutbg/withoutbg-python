@@ -223,7 +223,8 @@ def test_resize_bilinear_matches_torch_half_pixel_centers():
     np.testing.assert_allclose(out[0, 0], [0.0, 0.25, 0.75, 1.0])
 
 
-def test_providers_reach_session_factory(bundle):
+def test_providers_reach_session_factory(bundle, monkeypatch):
+    monkeypatch.setattr("withoutbg.routed.defuse_for_cuda", lambda p: None)
     sidecar, root = bundle
     seen = []
 
@@ -244,7 +245,8 @@ def test_providers_reach_session_factory(bundle):
     assert seen == [["CUDAExecutionProvider", "CPUExecutionProvider"]]
 
 
-def test_unavailable_first_provider_raises(bundle):
+def test_unavailable_first_provider_raises(bundle, monkeypatch):
+    monkeypatch.setattr("withoutbg.routed.defuse_for_cuda", lambda p: None)
     sidecar, root = bundle
 
     class Session:

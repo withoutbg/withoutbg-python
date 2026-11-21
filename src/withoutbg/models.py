@@ -13,6 +13,7 @@ from huggingface_hub import hf_hub_download
 from huggingface_hub.errors import HfHubHTTPError, RepositoryNotFoundError
 from PIL import ExifTags, Image
 
+from .cuda import CUDA_PROVIDER, defuse_for_cuda
 from .exceptions import ModelNotFoundError, WithoutBGError
 from .routed import RoutedPipeline
 
@@ -263,9 +264,10 @@ class OpenWeightsModel:
     def _load_model(self) -> None:
         """Load the unified ONNX model."""
         try:
-            self.session = ort.InferenceSession(
-                str(self.model_path), providers=self.providers
-            )
+            source: Any = str(self.model_path)
+            if self.providers[0] == CUDA_PROVIDER:
+                source = defuse_for_cuda(Path(source)) or source
+            self.session = ort.InferenceSession(source, providers=self.providers)
         except Exception as e:
             raise ModelNotFoundError(f"Failed to load model: {str(e)}") from e
 

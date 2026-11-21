@@ -307,7 +307,7 @@ class TestRealImageProcessing:
 
             print(f"Intersection pixels: {intersection}")
             print(f"Union pixels: {union}")
-            print(f"IoU = {intersection}/{union} = {intersection/union:.4f}")
+            print(f"IoU = {intersection}/{union} = {intersection / union:.4f}")
 
     def test_error_handling_with_real_model(self, real_open_weights):
         """Test error handling with real models."""
