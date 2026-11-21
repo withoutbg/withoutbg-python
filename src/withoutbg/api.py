@@ -263,7 +263,7 @@ class WithoutBGAPIClient:
         marks = mask_from_image(self._open_image(mask), photo_size, "Mask")
         img = Image.fromarray(marks.astype("uint8") * 255, mode="L")
         if img.size != tuple(out_size):
-            img = img.resize(tuple(out_size), Image.Resampling.NEAREST)
+            img = img.resize((out_size[0], out_size[1]), Image.Resampling.NEAREST)
         buffer = io.BytesIO()
         img.save(buffer, format="PNG")
         return base64.b64encode(buffer.getvalue()).decode("utf-8")
@@ -294,7 +294,8 @@ class WithoutBGAPIClient:
                 error_msg = f"HTTP {response.status_code}: {response.text}"
             raise APIError(f"API request failed: {error_msg}")
 
-        return response.json()
+        result: dict[str, Any] = response.json()
+        return result
 
     def edit(
         self,
