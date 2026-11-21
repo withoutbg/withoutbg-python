@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.6.0](https://github.com/withoutbg/withoutbg-python/compare/v1.5.1...v1.6.0) (2026-11-21)
+
+### Features
+
+* **open-weights:** execution providers ([da39ab5](https://github.com/withoutbg/withoutbg-python/commit/da39ab5763e749a4dc4997a976ad5ecc22b49401))
+* **open-weights:** execution providers, CUDA support ([bd25a02](https://github.com/withoutbg/withoutbg-python/commit/bd25a0273b9ca4307c2555c25f08eb4cb4617637))
+
+### Bug Fixes
+
+* **types:** treat optional onnx as untyped for mypy ([acd301d](https://github.com/withoutbg/withoutbg-python/commit/acd301d304394faee425f1f37d6f9f620815fc93))
+
 ## [1.5.1](https://github.com/withoutbg/withoutbg-python/compare/v1.5.0...v1.5.1) (2026-11-21)
 
 ### Bug Fixes
