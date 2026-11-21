@@ -33,7 +33,7 @@ def defuse_for_cuda(path: Path) -> bytes | None:
     ``None`` means the graph needs no change; load it from ``path`` as usual.
     """
     try:
-        import onnx  # type: ignore
+        import onnx
         from onnx import helper
     except ImportError as e:  # pragma: no cover - exercised via message only
         raise RuntimeError(

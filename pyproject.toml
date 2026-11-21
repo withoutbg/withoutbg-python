@@ -148,6 +148,12 @@ strict_equality = true
 module = ["huggingface_hub.*"]
 follow_imports = "skip"
 
+# onnx is an optional extra (CUDA only); with it installed, treat it as untyped.
+[[tool.mypy.overrides]]
+module = ["onnx", "onnx.*"]
+follow_imports = "skip"
+ignore_missing_imports = true
+
 # edit.py is the withoutBG reference host's edit code, kept verbatim for parity.
 [[tool.mypy.overrides]]
 module = ["withoutbg.edit"]
