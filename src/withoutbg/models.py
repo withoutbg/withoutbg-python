@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 import onnxruntime as ort  # type: ignore
 from huggingface_hub import hf_hub_download
+from huggingface_hub.errors import HfHubHTTPError, RepositoryNotFoundError
 from PIL import ExifTags, Image
 
 from .exceptions import ModelNotFoundError, WithoutBGError
@@ -178,6 +179,23 @@ class OpenWeightsModel:
             HF_MODEL_FILENAME, "withoutBG Open Weights Model ONNX model"
         )
 
+    @staticmethod
+    def _hf_download(**kwargs: Any) -> str:
+        """``hf_hub_download`` that survives a stale Hugging Face login.
+
+        The model repo is public. huggingface_hub still sends a stored token
+        (``~/.cache/huggingface/token`` or ``HF_TOKEN``), and Hugging Face
+        answers 401 "Repository Not Found" when that token is expired or
+        revoked, even for public repos. On that error, retry once without a token.
+        """
+        try:
+            return str(hf_hub_download(**kwargs))
+        except HfHubHTTPError as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            if status != 401 and not isinstance(e, RepositoryNotFoundError):
+                raise
+            return str(hf_hub_download(**kwargs, token=False))
+
     def _download_from_hf(self, filename: str, model_name: str) -> Path:
         """Download model from Hugging Face Hub with caching.
 
@@ -193,7 +211,7 @@ class OpenWeightsModel:
         """
         try:
             model_path = Path(
-                hf_hub_download(
+                self._hf_download(
                     repo_id=HF_REPO_ID,
                     filename=filename,
                     revision=self._hf_revision,

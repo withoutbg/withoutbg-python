@@ -250,3 +250,63 @@ class TestRoutedBundle:
         OpenWeightsModel()._download_from_hf("x.onnx", "x")
 
         assert mock_download.call_args.kwargs["revision"] == HF_REVISION
+
+
+class TestStaleHubToken:
+    """A stale Hugging Face login must not break downloads from the public repo."""
+
+    @staticmethod
+    def _error(cls, status):
+        from huggingface_hub.errors import HfHubHTTPError  # noqa: F401
+
+        response = Mock()
+        response.status_code = status
+        response.headers = {}
+        return cls("401 Client Error", response=response)
+
+    @patch("withoutbg.models.hf_hub_download")
+    def test_retries_without_token_on_repository_not_found(
+        self, mock_download, tmp_path
+    ):
+        from huggingface_hub.errors import RepositoryNotFoundError
+
+        ok = str(tmp_path / "x.onnx")
+        mock_download.side_effect = [self._error(RepositoryNotFoundError, 401), ok]
+
+        path = OpenWeightsModel()._download_from_hf("x.onnx", "x")
+
+        assert str(path) == ok
+        assert mock_download.call_count == 2
+        assert "token" not in mock_download.call_args_list[0].kwargs
+        assert mock_download.call_args_list[1].kwargs["token"] is False
+
+    @patch("withoutbg.models.hf_hub_download")
+    def test_retries_without_token_on_plain_401(self, mock_download, tmp_path):
+        from huggingface_hub.errors import HfHubHTTPError
+
+        ok = str(tmp_path / "x.onnx")
+        mock_download.side_effect = [self._error(HfHubHTTPError, 401), ok]
+
+        OpenWeightsModel()._download_from_hf("x.onnx", "x")
+
+        assert mock_download.call_args_list[1].kwargs["token"] is False
+
+    @patch("withoutbg.models.hf_hub_download")
+    def test_other_http_errors_are_not_retried(self, mock_download):
+        from huggingface_hub.errors import HfHubHTTPError
+
+        mock_download.side_effect = self._error(HfHubHTTPError, 500)
+
+        with pytest.raises(ModelNotFoundError):
+            OpenWeightsModel()._download_from_hf("x.onnx", "x")
+        assert mock_download.call_count == 1
+
+    @patch("withoutbg.models.hf_hub_download")
+    def test_failure_after_retry_still_raises(self, mock_download):
+        from huggingface_hub.errors import RepositoryNotFoundError
+
+        mock_download.side_effect = self._error(RepositoryNotFoundError, 401)
+
+        with pytest.raises(ModelNotFoundError, match="Hugging Face"):
+            OpenWeightsModel()._download_from_hf("x.onnx", "x")
+        assert mock_download.call_count == 2
