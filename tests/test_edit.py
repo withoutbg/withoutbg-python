@@ -281,8 +281,16 @@ def test_cli_edit_rejects_api_and_matte_alone(tmp_path):
     assert r.exit_code == 1 and "--matte needs" in r.output
     r = runner.invoke(
         main,
-        [str(img), "--matte", str(img), "--keep", str(img),
-         "--use-api", "--api-key", "k"],
+        [
+            str(img),
+            "--matte",
+            str(img),
+            "--keep",
+            str(img),
+            "--use-api",
+            "--api-key",
+            "k",
+        ],
     )
     assert r.exit_code == 1 and "open weights only" in r.output
 
